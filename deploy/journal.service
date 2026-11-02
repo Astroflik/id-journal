@@ -1,0 +1,25 @@
+[Unit]
+Description=Journal by myIDgod
+After=network.target
+
+[Service]
+Type=simple
+User=journal
+Group=journal
+WorkingDirectory=/opt/journal-by-myidgod
+Environment=HOST=127.0.0.1
+Environment=PORT=8766
+Environment=DATA_DIR=/var/lib/journal-by-myidgod
+StateDirectory=journal-by-myidgod
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/usr/bin/ruby /opt/journal-by-myidgod/server.rb
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
