@@ -249,15 +249,17 @@ let T=[],P=[],view='home',db=null,assets=null,ready=false;
 // ---- storage: db (shared with this artifact) or localStorage fallback ----
 const store={
   async init(){try{T=JSON.parse(localStorage.getItem('jt')||'[]');P=JSON.parse(localStorage.getItem('jp')||'[]');if(T.length||P.length){ready=true;render()}}catch(e){}try{const c=window.claude&&await window.claude.use('db');if(c){db=c;}}catch(e){}try{assets=window.claude&&await window.claude.use('assets')}catch(e){}
-    if(db){for(const k of['trades','plans'])db.collection(k).onSnapshot(s=>{const a=s.docs.map(d=>({id:d.id,...d.data()}));const mg='jm_'+k,lk=k==='trades'?'jt':'jp';try{const first=!localStorage.getItem(mg);localStorage.setItem(mg,'1');if(!a.length&&first){JSON.parse(localStorage.getItem(lk)||'[]').forEach(x=>store.save(k,x))}else localStorage.setItem(lk,JSON.stringify(a))}catch(e){}k==='trades'?T=a:P=a;ready=true;render()},()=>{})}
+    if(db){for(const k of['trades','plans'])db.collection(k).onSnapshot(s=>{const a=s.docs.map(d=>({id:d.id,...d.data()}));const mg='jm_'+k,lk=k==='trades'?'jt':'jp';try{const first=!localStorage.getItem(mg);localStorage.setItem(mg,'1');if(!a.length&&first){JSON.parse(localStorage.getItem(lk)||'[]').forEach(x=>store.save(k,x).catch(e=>toast('Не удалось перенести запись: '+(e.code||e.message))))}else localStorage.setItem(lk,JSON.stringify(a))}catch(e){}k==='trades'?T=a:P=a;ready=true;render()},()=>{})}
     else{try{T=JSON.parse(localStorage.getItem('jt')||'[]');P=JSON.parse(localStorage.getItem('jp')||'[]')}catch(e){}ready=true;render()}},
-  async save(k,o){const id=o.id||('x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5));const d={...o};delete d.id;
-    if(db){try{await db.collection(k).doc(id).set(JSON.parse(JSON.stringify(d)));toast('Сохранено ✓')}catch(e){toast('Не удалось сохранить: '+(e.code||e.message))}}else{const a=k==='trades'?T:P;const i=a.findIndex(x=>x.id===id);const r={...d,id};i<0?a.push(r):a[i]=r;localStorage.setItem(k==='trades'?'jt':'jp',JSON.stringify(a));render()}},
-  async del(k,id){if(db)await db.collection(k).doc(id).delete();else{const a=(k==='trades'?T:P).filter(x=>x.id!==id);k==='trades'?T=a:P=a;localStorage.setItem(k==='trades'?'jt':'jp',JSON.stringify(a));render()}}
+  async save(k,o,sync=false){const id=o.id!=null&&o.id!==''?String(o.id):'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);const d={...o};delete d.id;
+    if(db)await db.collection(k).doc(id).set(JSON.parse(JSON.stringify(d)));else{const a=k==='trades'?T:P;const i=a.findIndex(x=>String(x.id)===String(id));const r={...d,id};i<0?a.push(r):a[i]=r;localStorage.setItem(k==='trades'?'jt':'jp',JSON.stringify(a));render()}
+    if(sync)await accountApi.flush()},
+  async del(k,id,sync=false){if(db)await db.collection(k).doc(String(id)).delete();else{const a=(k==='trades'?T:P).filter(x=>String(x.id)!==String(id));k==='trades'?T=a:P=a;localStorage.setItem(k==='trades'?'jt':'jp',JSON.stringify(a));render()}
+    if(sync)await accountApi.flush()}
 };
 // ---- maths ----
 const R=t=>t.res==='Тейк'?(num(t.rr)??0):t.res==='BE'?0:t.res==='Стоп'?-1:null;
-const cl=()=>T.filter(t=>R(t)!==null).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||a.id.localeCompare(b.id));
+const cl=()=>T.filter(t=>R(t)!==null).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.time||'').localeCompare(String(b.time||''))||String(a.id??'').localeCompare(String(b.id??'')));
 function stats(a){const n=a.length,tk=a.filter(t=>t.res==='Тейк').length,be=a.filter(t=>t.res==='BE').length,st=n-tk-be;let s=0,pos=0,neg=0,eq=0,pk=0,dd=0;
   a.forEach(t=>{const r=R(t);s+=r;r>0?pos+=r:neg-=r;eq+=r;pk=Math.max(pk,eq);dd=Math.max(dd,pk-eq)});
   return{n,tk,be,st,wr:n?tk/n:null,s,avg:n?s/n:null,pf:neg>0?pos/neg:pos>0?Infinity:null,dd}}
@@ -298,15 +300,15 @@ function tradeForm(t){const o={...t};if(!o.id){o.date=o.date||today();o.inst=o.i
     FIELDS.forEach(([k,lab,op])=>{let c;if(op==='num'||op==='time'){c=el('input');c.type=op==='num'?'number':'time';c.step='any';c.value=o[k]??'';c.oninput=()=>o[k]=c.value}else{c=el('select');c.append(new Option('—',''));op.forEach(v=>c.append(new Option(v,v)));c.value=o[k]||'';c.onchange=()=>o[k]=c.value}L(lab,c)});
     m.append(g);const ac=el('div','bar');ACC().map(x=>[x.id,x.name]).forEach(([k,lab])=>{const l=el('label'),c=el('input');c.type='checkbox';c.checked=!!o[k];c.onchange=()=>o[k]=c.checked;l.append(c,' '+lab);ac.append(l)});m.append(ac);
     const ta=(k,lab)=>{const t=el('textarea');t.rows=3;t.style.width='100%';t.value=o[k]||'';t.oninput=()=>o[k]=t.value;m.append(el('div','mu',lab),t)};ta('desc','Описание');ta('err','Ошибки');shotsUI(m,o);
-    const b=el('div','bar');const sv=el('button','p','Сохранить');sv.onclick=async()=>{await store.save('trades',o);close();if(o.res==='Тейк')boom()};b.append(sv);
-    const cn=el('button','s','Отмена');cn.onclick=close;b.append(cn);if(o.id){const x=el('button','s','Удалить');x.onclick=()=>two(x,async()=>{await store.del('trades',o.id);close()});b.append(x);const dp=el('button','s','Копия');dp.onclick=async()=>{await store.save('trades',{...o,id:'',date:today()});close();toast('Копия создана')};b.append(dp);const shb=el('button','p','🎬 Поделиться');shb.onclick=()=>shareCard(o);b.append(shb)}m.append(b)})}
+    const b=el('div','bar');const sv=el('button','p','Сохранить');sv.onclick=async()=>{sv.disabled=true;try{await store.save('trades',o,true);close();if(o.res==='Тейк')boom()}catch(error){if(!accountApi.errorShown)toast('Не удалось сохранить сделку: '+error.message)}finally{sv.disabled=false}};b.append(sv);
+    const cn=el('button','s','Отмена');cn.onclick=close;b.append(cn);if(o.id){const x=el('button','s','Удалить');x.onclick=()=>two(x,async()=>{try{await store.del('trades',o.id,true);close()}catch(error){if(!accountApi.errorShown)toast('Не удалось удалить сделку: '+error.message)}});b.append(x);const dp=el('button','s','Копия');dp.onclick=async()=>{try{await store.save('trades',{...o,id:'',date:today()},true);close();toast('Копия создана')}catch(error){if(!accountApi.errorShown)toast('Не удалось сохранить копию: '+error.message)}};b.append(dp);const shb=el('button','p','🎬 Поделиться');shb.onclick=()=>shareCard(o);b.append(shb)}m.append(b)})}
 function planForm(p){const o={...p};if(!o.id&&!o.date)o.date=today();
   modal((m,close)=>{m.append(el('h3',null,'План на день'));const g=el('div','fg'),d=el('input');d.type='date';d.value=o.date;d.onchange=()=>o.date=d.value;
     const s=el('select');['—','Сбылся','Частично','Не сбылся'].forEach(v=>s.append(new Option(v,v==='—'?'':v)));s.value=o.done||'';s.onchange=()=>o.done=s.value;
     [['Дата',d],['Итог дня',s]].forEach(([a,i])=>{const l=el('label');l.append(el('span',null,a),i);g.append(l)});m.append(g);
     const ta=(k,lab,r)=>{const t=el('textarea');t.rows=r;t.style.width='100%';t.value=o[k]||'';t.oninput=()=>o[k]=t.value;m.append(el('div','mu',lab),t)};ta('plan','План (свободный текст)',7);ta('sum','Итог дня',4);shotsUI(m,o);
-    const b=el('div','bar'),sv=el('button','p','Сохранить');sv.onclick=async()=>{await store.save('plans',o);close()};const cn=el('button','s','Отмена');cn.onclick=close;b.append(sv,cn);
-    if(o.id){const x=el('button','s','Удалить');x.onclick=()=>two(x,async()=>{await store.del('plans',o.id);close()});b.append(x)}m.append(b)})}
+    const b=el('div','bar'),sv=el('button','p','Сохранить');sv.onclick=async()=>{sv.disabled=true;try{await store.save('plans',o,true);close()}catch(error){if(!accountApi.errorShown)toast('Не удалось сохранить план: '+error.message)}finally{sv.disabled=false}};const cn=el('button','s','Отмена');cn.onclick=close;b.append(sv,cn);
+    if(o.id){const x=el('button','s','Удалить');x.onclick=()=>two(x,async()=>{try{await store.del('plans',o.id,true);close()}catch(error){if(!accountApi.errorShown)toast('Не удалось удалить план: '+error.message)}});b.append(x)}m.append(b)})}
 // ---- views ----
 function vStats(p,full){const a=cl();let m=window._m||'R',ac=window._a||'all';const box=el('div');p.append(box);
   const draw=()=>{box.replaceChildren();const f=a.filter(t=>ac==='all'||t[ac]),s=stats(f);
@@ -553,7 +555,7 @@ async function importFile(f){try{let rows=[];const nm=f.name.toLowerCase();
    const ot=tm[0]!=null?r[tm[0]]:'',ct=tm[1]!=null?r[tm[1]]:ot,sv=sd!=null?String(r[sd]):'',src=(idc!=null&&r[idc]?String(r[idc]):s+'|'+ot+'|'+e);if(have.has(src))return;have.add(src);
    out.push({inst:mi(s),date:dt(ct)||dt(ot)||today(),time:tmv(ot),side:/buy|long/i.test(sv)?'Long':/sell|short/i.test(sv)?'Short':'',entry:e==null?'':String(e),exit:x==null?'':String(x),res:p==null?'':p>0?'Тейк':p<0?'Стоп':'BE',pnl:p==null?'':String(p),src,imp:true})});
   if(!out.length){toast('Новых сделок не найдено');return}
-  modal((m,close)=>{m.append(el('h3',null,'Импорт: найдено '+out.length+' новых сделок'),el('div','mu','Проверь превью. После импорта открой каждую сделку и отметь факторы (🆕 — ещё не размечена). RR у тейков заполни вручную.'));table(m,['Дата','Время','Инстр.','Напр.','Вход','Выход','Результат','PnL'],out.slice(0,12).map(o=>({cells:[o.date,o.time,o.inst,o.side,o.entry,o.exit,o.res,o.pnl]})));const b=el('div','bar'),ok=el('button','p','Импортировать '+out.length);ok.onclick=async()=>{ok.disabled=true;for(const o of out)await store.save('trades',o);close();toast('Импортировано: '+out.length)};b.append(ok);m.append(b)})}catch(e){toast('Не удалось прочитать файл: '+(e.message||e))}}
+  modal((m,close)=>{m.append(el('h3',null,'Импорт: найдено '+out.length+' новых сделок'),el('div','mu','Проверь превью. После импорта открой каждую сделку и отметь факторы (🆕 — ещё не размечена). RR у тейков заполни вручную.'));table(m,['Дата','Время','Инстр.','Напр.','Вход','Выход','Результат','PnL'],out.slice(0,12).map(o=>({cells:[o.date,o.time,o.inst,o.side,o.entry,o.exit,o.res,o.pnl]})));const b=el('div','bar'),ok=el('button','p','Импортировать '+out.length);ok.onclick=async()=>{ok.disabled=true;try{for(const o of out)await store.save('trades',o);await accountApi.flush();close();toast('Импортировано: '+out.length)}catch(error){ok.disabled=false;toast('Импорт не завершён: '+error.message)}};b.append(ok);m.append(b)})}catch(e){toast('Не удалось прочитать файл: '+(e.message||e))}}
 function vReview(p){CFG.reviews=CFG.reviews||{};const st=window._rv=window._rv||{m:'week',o:0},bar=el('div','bar'),sm=el('select'),pv=el('button','s','‹'),nx=el('button','s','›');[['week','Неделя'],['month','Месяц']].forEach(([v,l])=>sm.append(new Option(l,v)));sm.value=st.m;sm.onchange=()=>{st.m=sm.value;st.o=0;render()};pv.onclick=()=>{st.o--;render()};nx.onclick=()=>{st.o++;render()};
   const n=new Date();let a,b,key,title;if(st.m==='week'){const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()+st.o*7);a=new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()+6)%7);b=new Date(a.getFullYear(),a.getMonth(),a.getDate()+6);key='w:'+ymd(a);title='Неделя '+ymd(a)+' — '+ymd(b)}else{a=new Date(n.getFullYear(),n.getMonth()+st.o,1);b=new Date(a.getFullYear(),a.getMonth()+1,0);key='m:'+ymd(a).slice(0,7);title=a.toLocaleDateString('ru',{month:'long',year:'numeric'})}
   bar.append(sm,pv,el('b',null,title),nx);p.append(bar);const A=ymd(a),B=ymd(b),tr=cl().filter(t=>t.date>=A&&t.date<=B),all=T.filter(t=>t.date>=A&&t.date<=B),pl=P.filter(x=>x.date>=A&&x.date<=B),s=stats(tr);if(!all.length&&!pl.length)p.append(el('div','msg','За этот период записей нет.'));
@@ -617,7 +619,7 @@ new MutationObserver(ms=>ms.forEach(r=>r.addedNodes.forEach(n=>{if(n.nodeType===
 function logoEl(){const d=el('div','logo-wrap');d.innerHTML=`<svg class='logo' viewBox='0 0 320 180'><defs><linearGradient id='lg1' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#fff'/><stop offset='.5' stop-color='#c4b5fd'/><stop offset='1' stop-color='#7c3aed'/></linearGradient><linearGradient id='lg2' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#c4b5fd' stop-opacity='0'/><stop offset='.5' stop-color='#e9d5ff'/><stop offset='1' stop-color='#8b5cf6' stop-opacity='0'/></linearGradient></defs><ellipse class='ring' cx='160' cy='90' rx='150' ry='58' pathLength='1'/><g class='pt' style='--fx:-90px;--fy:-30px;--fr:-40deg;--d:0s'><rect x='62' y='28' width='62' height='20' rx='10' fill='url(#lg1)'/></g><g class='pt' style='--fx:0px;--fy:-90px;--fr:20deg;--d:.12s'><rect x='82' y='40' width='22' height='100' rx='8' fill='url(#lg1)'/></g><g class='pt' style='--fx:90px;--fy:50px;--fr:40deg;--d:.24s'><rect x='62' y='132' width='62' height='20' rx='10' fill='url(#lg1)'/></g><g class='pt' style='--fx:0px;--fy:-110px;--fr:-25deg;--d:.36s'><rect x='152' y='28' width='22' height='124' rx='9' fill='url(#lg1)'/></g><g class='pt' style='--fx:150px;--fy:0px;--fr:90deg;--d:.5s'><path d='M174 38H200A52 52 0 0 1 200 142H174' fill='none' stroke='url(#lg1)' stroke-width='22' stroke-linecap='round' stroke-linejoin='round'/></g><circle class='sp' cx='30' cy='60' r='3' fill='#fff' style='--d:1s'/><circle class='sp' cx='290' cy='40' r='2.5' fill='#e9d5ff' style='--d:1.4s'/><circle class='sp' cx='275' cy='150' r='3' fill='#fff' style='--d:1.8s'/><circle class='sp' cx='45' cy='150' r='2' fill='#c4b5fd' style='--d:.6s'/><circle class='sp' cx='140' cy='14' r='2.5' fill='#fff' style='--d:2.2s'/><circle r='4' fill='#fff' class='orb'><animateMotion dur='7s' repeatCount='indefinite' path='M10 90A150 58 0 1 1 310 90A150 58 0 1 1 10 90'/></circle></svg>`;return d}
 function coins(){[[140,{right:'7%',top:'15%'},0],[100,{left:'5%',bottom:'12%'},2],[62,{left:'13%',top:'30%'},4],[84,{right:'13%',bottom:'20%'},6]].forEach(([s,pos,dl])=>{const c=el('div','coin');c.style.width=c.style.height=s+'px';Object.assign(c.style,pos);c.style.animationDelay='-'+dl+'s';c.innerHTML=`<svg viewBox='0 0 24 24'><path d='M12 2l7 10-7 4-7-4zM12 22l-7-8 7 4 7-4z'/></svg>`;document.body.append(c)})}
 const accountApi={
-  user:null,online:false,enabled:false,applying:false,syncTimer:null,syncBusy:false,syncQueued:false,errorShown:false,storageSyncInstalled:false,firebaseMode:false,auth:null,firestore:null,
+  user:null,online:false,enabled:false,applying:false,syncTimer:null,syncBusy:false,syncQueued:false,syncPromise:null,errorShown:false,storageSyncInstalled:false,firebaseMode:false,auth:null,firestore:null,
   firebaseConfig(){
     const config=window.JOURNAL_FIREBASE_CONFIG;
     return config&&config.apiKey&&config.authDomain&&config.projectId&&config.appId&&
@@ -703,15 +705,23 @@ const accountApi={
   },
   schedule(){
     if(!this.enabled||this.applying||!this.user)return;
-    clearTimeout(this.syncTimer);this.syncTimer=setTimeout(()=>this.sync(),700)
+    clearTimeout(this.syncTimer);this.syncTimer=setTimeout(()=>this.sync().catch(()=>{}),700)
   },
   async sync(){
     if(!this.enabled||!this.user)return;
-    if(this.syncBusy){this.syncQueued=true;return}
+    if(this.syncBusy){this.syncQueued=true;return this.syncPromise}
     this.syncBusy=true;
-    try{await this.writeState(this.snapshot());this.errorShown=false}
-    catch(error){if(!this.errorShown){toast('Не удалось синхронизировать аккаунт: '+error.message);this.errorShown=true}}
-    finally{this.syncBusy=false;if(this.syncQueued){this.syncQueued=false;this.schedule()}}
+    this.syncPromise=(async()=>{try{await this.writeState(this.snapshot());this.errorShown=false}
+      catch(error){if(!this.errorShown){toast('Не удалось синхронизировать аккаунт: '+error.message);this.errorShown=true}throw error}
+      finally{this.syncBusy=false;this.syncPromise=null;if(this.syncQueued){this.syncQueued=false;this.schedule()}}})();
+    return this.syncPromise
+  },
+  async flush(){
+    if(!this.enabled||!this.user)return;
+    clearTimeout(this.syncTimer);this.syncTimer=null;
+    if(this.syncBusy){this.syncQueued=true;try{await this.syncPromise}catch{}}
+    clearTimeout(this.syncTimer);this.syncTimer=null;
+    return this.sync()
   },
   updateNav(){
     const nav=$('#nav');if(!nav)return;
