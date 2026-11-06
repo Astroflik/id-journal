@@ -287,10 +287,16 @@ const resC=t=>t.res==='Тейк'?{t:'✅ Тейк',c:'w'}:t.res==='Стоп'?{t:
 const accL=t=>ACC().filter(x=>t[x.id]).map(x=>x.name).join(' + ');
 // ---- modal forms ----
 function modal(build){const o=el('div','ov'),m=el('div','md');o.append(m);o.onmousedown=e=>{if(e.target===o)o.remove()};document.body.append(o);build(m,()=>o.remove())}
-async function addShot(o,blob,redraw){if(!assets){toast('Загрузка скриншотов недоступна');return}try{const r=await assets.upload(blob);(o.shots=o.shots||[]).push({id:r.id,url:r.url});redraw()}catch(e){toast('Не удалось загрузить: '+(e.message||e.code))}}
+async function addShot(o,blob,redraw){let url;try{url=URL.createObjectURL(blob);const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('Не удалось прочитать изображение'));img.src=url});
+  let scale=Math.min(1,1600/Math.max(image.naturalWidth,image.naturalHeight)),compressed=null;
+  for(const quality of[.82,.74,.66,.58]){const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));const context=canvas.getContext('2d');if(!context)throw new Error('Не удалось обработать изображение');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);compressed=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('Не удалось сжать изображение')),'image/jpeg',quality));if(compressed.size<=700*1024)break;scale*=.78}
+  if(!compressed||compressed.size>700*1024)throw new Error('Скриншот слишком большой даже после сжатия. Попробуй изображение меньшего размера');
+  const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>typeof reader.result==='string'?resolve(reader.result):reject(new Error('Не удалось прочитать сжатый скриншот'));reader.onerror=()=>reject(reader.error||new Error('Не удалось прочитать сжатый скриншот'));reader.readAsDataURL(compressed)});
+  (o.shots=o.shots||[]).push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),url:data});redraw();toast('Скриншот добавлен — он сохранится вместе со сделкой')
+ }catch(error){toast('Не удалось добавить скриншот: '+error.message)}finally{if(url)URL.revokeObjectURL(url)}}
 function shotsUI(m,o){const box=el('div','shots'),draw=()=>{box.replaceChildren(...(o.shots||[]).map((s,i)=>{const d=el('div'),im=el('img');im.src=s.url;im.onclick=()=>window.open(s.url,'_blank');const x=el('button',null,'×');x.onclick=()=>{o.shots.splice(i,1);draw()};d.append(im,x);return d}))};
-  const f=el('input');f.type='file';f.accept='image/*';f.multiple=true;f.onchange=()=>[...f.files].forEach(b=>addShot(o,b,draw));
-  const hint=el('div','mu','Скриншоты: нажми Ctrl+V прямо в этом окне или выбери файлы');m.append(hint,f,box);
+  const f=el('input');f.type='file';f.accept='image/*';f.multiple=true;f.onchange=async()=>{for(const file of f.files)await addShot(o,file,draw);f.value=''};
+  const hint=el('div','mu','Скриншоты сохраняются со сделкой. Вставь через Ctrl+V / Cmd+V или выбери файлы');m.append(hint,f,box);
   document.onpaste=e=>{if(!document.querySelector('.ov'))return;for(const it of e.clipboardData.items)if(it.type.startsWith('image/'))addShot(o,it.getAsFile(),draw)};draw()}
 function tradeForm(t){const o={...t};if(!o.id){o.date=o.date||today();o.inst=o.inst||'NQ'}
   modal((m,close)=>{m.append(el('h3',null,o.id?'Сделка':'Новая сделка'));const g=el('div','fg');
