@@ -22,10 +22,12 @@
         db.calls.push([name,args||null]);save(db);
         if(name==='admin_list_users')return {data:db.users||[],error:null};
         if(name==='admin_blocked_domains')return {data:db.domains||[],error:null};
+        if(name==='admin_reports')return {data:db.reports||[],error:null};
+        if(name==='admin_bans')return {data:db.bans||[],error:null};
         return {data:null,error:null}
       }
       if(name==='save_state'){
-        if(db.access.status==='expired')return {data:null,error:{code:'42501',message:'subscription_required'}};
+        if(db.access.status==='expired'||db.access.status==='banned')return {data:null,error:{code:'42501',message:'subscription_required'}};
         if(db.row&&db.row.rev!==args.expected_rev)return {data:null,error:{code:'40001',message:'rev_conflict'}};
         db.row={state:args.new_state,rev:db.row?db.row.rev+1:1};db.calls.push(['save',db.row.rev]);save(db);
         return {data:db.row.rev,error:null}
@@ -34,7 +36,7 @@
       const so=db.social=db.social||{profile:null,clan:null,invites:[],msgs:[],n:0};
       const ok=data=>{save(db);db.calls.push([name,args||null]);save(db);return {data,error:null}};
       const fail=message=>({data:null,error:{code:'P0001',message}});
-      const me=()=>Object.assign({user_id:'uid-1',nick:null,avatar_path:null,bio:'',links:[]},so.profile||{},{clan:so.clan?{id:'c1',tag:so.clan.tag,name:so.clan.name,color:so.clan.color,emblem_path:so.clan.emblem_path||null,role:'leader'}:null});
+      const me=()=>Object.assign({user_id:'uid-1',nick:null,avatar_path:null,bio:'',links:[],socials:{}},so.profile||{},{clan:so.clan?{id:'c1',tag:so.clan.tag,name:so.clan.name,color:so.clan.color,emblem_path:so.clan.emblem_path||null,role:'leader'}:null});
       const clan=()=>so.clan?Object.assign({id:'c1',my_role:'leader',created_at:'2026-11-11T10:00:00Z',members:[{user_id:'uid-1',nick:so.profile.nick,avatar_path:so.profile.avatar_path,role:'leader',joined_at:'2026-11-11T10:00:00Z'}]},so.clan):null;
       if(name==='my_profile')return ok(me());
       if(name==='save_profile'){if(!/^[\wА-Яа-яЁёІіЇїЄєҐґ.-]{3,20}$/.test(args.nick||''))return fail('nick_invalid');so.profile={nick:args.nick,bio:args.bio||'',links:args.links||[],avatar_path:args.avatar_path||null};return ok(me())}
@@ -48,6 +50,12 @@
       if(name==='clan_send'){so.n++;so.msgs.push({id:so.n,user_id:'uid-1',nick:so.profile.nick,avatar_path:null,body:args.body,created_at:'2026-11-11T10:0'+so.n+':00Z',mine:true});return ok(so.n)}
       if(name==='clan_messages'){const a=so.msgs.filter(m=>m.id>(args.after_id||0)&&m.id<(args.before_id||1e9)).slice().reverse();return ok(a)}
       if(name==='clan_leave'){so.clan=null;so.msgs=[];return ok(null)}
+      // stages 3-4 (migration 0004)
+      if(name==='name_available')return ok(!['taken','anna_trader'].includes(String(args.value).toLowerCase()));
+      if(name==='save_socials'){so.profile.socials={discord:args.discord||null,telegram:(args.telegram||'').replace(/^@/,'')||null,tiktok:(args.tiktok||'').replace(/^@/,'')||null};return ok(me())}
+      if(name==='get_profile')return ok({user_id:args.target,nick:'Other',avatar_path:null,bio:'',links:[],socials:{discord:'oth',telegram:'other_tg',tiktok:null},clan:null});
+      if(name==='submit_report'){so.reports=(so.reports||[]).concat([args]);return ok(so.reports.length)}
+      if(name==='my_reports')return ok((so.reports||[]).map((r,i)=>({id:i+1,kind:r.kind,category:r.category,status:'open',admin_note:'',created_at:'2026-11-11T10:00:00Z',target_nick:null})))
       return {data:null,error:{message:'unknown rpc '+name}}
     },
     storage:{from(){return {
@@ -55,6 +63,7 @@
       async list(prefix,opts){const db=load();db.calls.push(['list',prefix]);save(db);return {data:Object.keys(db.files).filter(k=>k.startsWith(prefix+'/')).map(k=>({name:k.slice(prefix.length+1)})),error:null}},
       getPublicUrl(path){const db=load();return {data:{publicUrl:db.files[path]||''}}},
       async remove(paths){const db=load();paths.forEach(p=>delete db.files[p]);db.calls.push(['remove',paths]);save(db);return {data:null,error:null}},
+      async createSignedUrls(paths){return {data:paths.map(p=>({path:p,signedUrl:load().files[p]||''})),error:null}},
       async download(path){const db=load();if(!db.files[path])return {data:null,error:{message:'not found'}};return {data:await(await fetch(db.files[path])).blob(),error:null}}
     }}}
   };

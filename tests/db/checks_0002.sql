@@ -74,7 +74,7 @@ select t.chk('second account on the same device: trial on hold', public.register
 select t.chk('held account sees itself as expired', public.my_access() ->> 'status' = 'expired');
 select t.chk('held account cannot write', t.code($$select public.save_state(0, '{}'::jsonb)$$) = '42501');
 select t.act(:'u8');
-select public.register_device('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb') \g /dev/null
+select public.register_device('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb') \g :nul
 reset role;
 select t.chk('only the first device is recorded', (select device_hash = :'dev' from public.subscriptions where user_id = :'u8'));
 
@@ -90,13 +90,13 @@ select t.chk('admin on a shared device is not held', public.register_device(:'de
 select t.chk('admin sees the signals', (select trial_status = 'pending_review' and same_device_accounts = 2 from public.admin_list_users() where user_id = :'u9')
   and (select same_mailbox_accounts >= 1 from public.admin_list_users() where user_id = :'u2'));
 select t.chk('admin approves the held trial', public.admin_approve_trial(:'u9') > now() + interval '13 days');
-select public.admin_grant(:'u10', 30) \g /dev/null
+select public.admin_grant(:'u10', 30) \g :nul
 select t.act(:'u9');
 select t.chk('approved account has its trial', public.my_access() ->> 'status' = 'trial' and public.my_access() ->> 'trial' = 'granted');
 select t.act(:'u10');
 select t.chk('paying account on a shared device keeps access', public.register_device(:'dev') ->> 'status' = 'active');
 select t.act(:'admin');
-select public.admin_revoke(:'u9') \g /dev/null
+select public.admin_revoke(:'u9') \g :nul
 select t.chk('admin revokes', (select trial_status = 'revoked' and not has_access from public.admin_list_users() where user_id = :'u9'));
 select t.chk('admin blocks a domain (any letter case)', t.code($$select public.admin_block_domain(' Example.NET ', 'test')$$) = '00000');
 select t.chk('blocked domain is listed in lower case', (select count(*) = 1 from public.admin_blocked_domains() where domain = 'example.net'));
@@ -105,7 +105,7 @@ insert into auth.users (email, email_confirmed_at) values ('late@example.net', n
 select t.chk('newly blocked domain gets no trial', (select s.trial_status = 'denied_disposable' from public.subscriptions s where s.email_normalized = 'late@example.net'));
 set role authenticated;
 select t.chk('bad domain refused', t.code($$select public.admin_block_domain('not a domain')$$) <> '00000');
-select public.admin_unblock_domain('example.net') \g /dev/null
+select public.admin_unblock_domain('example.net') \g :nul
 select t.chk('admin unblocks a domain', (select count(*) = 0 from public.admin_blocked_domains() where domain = 'example.net'));
 reset role;
 select t.chk('admin actions are logged', (select count(*) from public.admin_actions where action in ('approve_trial', 'revoke', 'block_domain', 'unblock_domain', 'grant')) = 5);

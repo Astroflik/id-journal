@@ -45,11 +45,11 @@ select t.act(:'x');
 select t.chk('no access: profile is read-only', t.code($$select public.save_profile('Xavier')$$) = '42501');
 select t.act(:'c');
 select t.chk('clan needs a nick first', t.err($$select public.create_clan('ABC', 'Alpha')$$) = 'nick_required');
-select public.save_profile('Clara') \g /dev/null
+select public.save_profile('Clara') \g :nul
 select t.act(:'d');
-select public.save_profile('Dima') \g /dev/null
+select public.save_profile('Dima') \g :nul
 select t.act(:'z');
-select public.save_profile('Zoe') \g /dev/null
+select public.save_profile('Zoe') \g :nul
 
 -- create
 select t.act(:'a');
@@ -137,9 +137,9 @@ select t.chk('hand over leadership', (select bool_and(case m ->> 'user_id' when 
 select t.act(:'b');
 select public.clan_create_invite(7, 10) as inv2 \gset
 select t.act(:'d');
-select public.clan_join(:'inv2') \g /dev/null
+select public.clan_join(:'inv2') \g :nul
 select t.act(:'b');
-select public.clan_leave() \g /dev/null
+select public.clan_leave() \g :nul
 select t.act(:'a');
 select t.chk('leader leaves: oldest officer leads', public.my_clan() ->> 'my_role' = 'leader');
 reset role;
@@ -147,7 +147,7 @@ delete from auth.users where id = :'a';
 set role authenticated;
 select t.act(:'d');
 select t.chk('leader account deleted: next member leads', public.my_clan() ->> 'my_role' = 'leader');
-select public.clan_leave() \g /dev/null
+select public.clan_leave() \g :nul
 reset role;
 select t.chk('last member leaves: clan removed with invites and chat', not exists (select 1 from public.clans where tag = 'ALP')
   and not exists (select 1 from public.clan_invites) and not exists (select 1 from public.clan_messages) and not exists (select 1 from public.clan_members));
@@ -155,13 +155,13 @@ set role authenticated;
 
 -- disband
 select t.act(:'z');
-select public.create_clan('ZED', 'Zed Squad') \g /dev/null
+select public.create_clan('ZED', 'Zed Squad') \g :nul
 select public.clan_create_invite() as inv3 \gset
 select t.act(:'c');
-select public.clan_join(:'inv3') \g /dev/null
+select public.clan_join(:'inv3') \g :nul
 select t.chk('member cannot disband', t.code($$select public.clan_disband()$$) = '42501');
 select t.act(:'z');
-select public.clan_disband() \g /dev/null
+select public.clan_disband() \g :nul
 select t.act(:'c');
 select t.chk('disband frees members', public.my_clan() is null);
 select t.chk('tag is free again', public.create_clan('ZED', 'Zed Again') ->> 'tag' = 'ZED');
