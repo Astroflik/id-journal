@@ -12,7 +12,7 @@
   var reduce = mm('(prefers-reduced-motion: reduce)'), fine = mm('(pointer: fine)'), nav = navigator, F = W.SCENE_FORCE || {};
   var lite = !F.full && ((nav.hardwareConcurrency || 8) <= 4 || (nav.deviceMemory || 8) <= 4);
   var small = Math.min(W.innerWidth, W.innerHeight) < 700;
-  var gl = cv.getContext('webgl', { antialias: false, alpha: false, depth: false, powerPreference: lite ? 'default' : 'high-performance' });
+  var gl = cv.getContext('webgl', { antialias: false, alpha: false, depth: true, powerPreference: lite ? 'default' : 'high-performance' });
   if (!gl) { root.classList.add('noscene'); return; }
   var sin = Math.sin, cos = Math.cos, abs = Math.abs, exp = Math.exp, min = Math.min, max = Math.max, PI = Math.PI, floor = Math.floor;
 
@@ -65,6 +65,38 @@
       });
     });
   })();
+  // ground mesh under the points: grey hillshade so the relief reads as a surface, darker trail along the path
+  var mesh = null;
+  tasks.push(function () {
+    var STP = den < .6 ? .34 : .25, nx = Math.round(25 / STP) + 1, nz = Math.round((Z0 - Z1) / STP) + 1, V = new Float32Array(nx * nz * 4), o = 0, i, j;
+    var Lx = .55, Ly = .7, Lz = .45, ll = Math.hypot(Lx, Ly, Lz); Lx /= ll; Ly /= ll; Lz /= ll;
+    for (j = 0; j < nz; j++) {
+      var z = Z0 - j * STP, c0 = cx(z);
+      for (i = 0; i < nx; i++) {
+        var dx = -12.5 + i * STP, x = c0 + dx, h = H(x, z), gx = (H(x + .12, z) - H(x - .12, z)) / .24, gz = (H(x, z + .12) - h) / .12;
+        var nl = Math.hypot(gx, 1, gz), lit = (-gx * Lx + Ly - gz * Lz) / nl;
+        var g = .968 - .24 * (1 - sm(.25, .95, lit)) - .05 * sm(1.5, 0, h);
+        g -= .2 * (1 - sm(.35, 1.5, abs(dx)));                                   // the trail
+        g = g + (.961 - g) * sm(8.5, 12.4, abs(dx));
+        V[o++] = x; V[o++] = h; V[o++] = z; V[o++] = g;
+      }
+    }
+    var I = new Uint16Array((nx - 1) * (nz - 1) * 6), q = 0;
+    for (j = 0; j < nz - 1; j++) for (i = 0; i < nx - 1; i++) { var a = j * nx + i, b = a + 1, c = a + nx, d = c + 1; I[q++] = a; I[q++] = c; I[q++] = b; I[q++] = b; I[q++] = c; I[q++] = d; }
+    mesh = { v: V, i: I, n: I.length };
+  });
+  // floor marks along the trail: entry chevrons and dashed stop lines with an x
+  tasks.push(function () {
+    for (var z = 11, k = 0; z > -72; z -= 1.6, k++) {
+      var c = cx(z), Y = function (x, zz) { return H(x, zz) + .02; };
+      if (k % 5 === 4) {
+        for (var x = c - 1.2; x < c + 1.2; x += .16) seg([x, Y(x, z), z], [x + .09, Y(x + .09, z), z], .012, 5, .85, 1);
+        var ex = c + 1.35; seg([ex - .1, Y(ex, z), z - .1], [ex + .1, Y(ex, z), z + .1], .012, 5, .9, 1); seg([ex - .1, Y(ex, z), z + .1], [ex + .1, Y(ex, z), z - .1], .012, 5, .9, 1);
+      } else {
+        seg([c - .32, Y(c - .32, z + .22), z + .22], [c, Y(c, z), z], .012, 5, .8, 1); seg([c, Y(c, z), z], [c + .32, Y(c + .32, z + .22), z + .22], .012, 5, .8, 1);
+      }
+    }
+  });
   // main peak pin
   tasks.push(function () { anchors[0] = [PEAKS[0][0], H(PEAKS[0][0], PEAKS[0][1]) + .03, PEAKS[0][1]]; });
   // viewfinder gates the camera dives through
@@ -151,23 +183,30 @@
     var S = function (x, y, zz, sd) { add(SC[0] + x, SC[1] + y, SC[2] + zz, 4, sd, z); };
     for (lat = -80; lat <= 80; lat += 10) {
       var y = SR * sin(lat * PI / 180), rr = SR * cos(lat * PI / 180), m = floor(2 * PI * rr / .032 * den);
-      for (j = 0; j < m; j++) { a = rnd() * 2 * PI; S(rr * cos(a), y, rr * sin(a), .4 + .5 * rnd()); }
+      for (j = 0; j < m; j++) { a = rnd() * 2 * PI; S(rr * cos(a), y, rr * sin(a), .72 + .27 * rnd()); }
     }
-    for (var k = 0; k < 12; k++) for (j = 0; j < 190 * den; j++) { a = (rnd() - .5) * PI; S(SR * cos(a) * cos(k * PI / 6), SR * sin(a), SR * cos(a) * sin(k * PI / 6), .2 + .4 * rnd()); }
+    for (var k = 0; k < 12; k++) for (j = 0; j < 190 * den; j++) { a = (rnd() - .5) * PI; S(SR * cos(a) * cos(k * PI / 6), SR * sin(a), SR * cos(a) * sin(k * PI / 6), .45 + .35 * rnd()); }
     for (j = 0; j < 3600 * den; j++) {
-      var yy = rnd() * 2 - 1, r1 = Math.sqrt(1 - yy * yy), core = j % 3 === 0, rad = core ? .8 : SR; a = rnd() * 2 * PI;
-      S(rad * r1 * cos(a), rad * yy, rad * r1 * sin(a), core ? .6 + .4 * rnd() : .1 + .3 * rnd());
+      var yy = rnd() * 2 - 1, r1 = Math.sqrt(1 - yy * yy), core = j % 3 === 0, rad = core ? 1.15 : SR; a = rnd() * 2 * PI;
+      S(rad * r1 * cos(a), rad * yy, rad * r1 * sin(a), core ? .12 + .2 * rnd() : .15 + .3 * rnd());
     }
     [[4.3, .45, 0], [5.2, 0, -.7]].forEach(function (o) {
       for (j = 0; j < 1500 * den; j++) {
         a = rnd() * 2 * PI; var r = o[0] + (rnd() - .5) * .05, x = r * cos(a), zz = r * sin(a);
         var y1 = -zz * sin(o[1]), z1 = zz * cos(o[1]), x2 = x * cos(o[2]) - y1 * sin(o[2]), y2 = x * sin(o[2]) + y1 * cos(o[2]);
-        S(x2, y2, z1, .4 + .5 * rnd());
+        S(x2, y2, z1, .7 + .29 * rnd());
       }
     });
     var mo = [5.2 * cos(1) * cos(-.7), 5.2 * cos(1) * sin(-.7), 5.2 * sin(1)];
     for (j = 0; j < 500 * den; j++) { var m2 = rnd() * 2 - 1, r3 = Math.sqrt(1 - m2 * m2) * .3; a = rnd() * 2 * PI; S(mo[0] + r3 * cos(a), mo[1] + m2 * .3, mo[2] + r3 * sin(a), .6 + .4 * rnd()); }
     anchors[6] = [SC[0], SC[1] + SR + .1, SC[2]];
+    // the ID mark (same drawing as the header logo), seed = position along the stroke for a travelling highlight
+    var E = [cx(-67.5) - 2.6, 4.6, -67.5], nv = norm([E[0] - SC[0], E[1] - SC[1], E[2] - SC[2]]), uv = norm(cross([0, 1, 0], nv)), vv = cross(nv, uv), sc2 = 1.05 / 21;
+    var P2 = function (x, y) { return [SC[0] + (uv[0] * x + vv[0] * y) * sc2, SC[1] + (uv[1] * x + vv[1] * y) * sc2, SC[2] + (uv[2] * x + vv[2] * y) * sc2]; }, len = 0;
+    var LG = function (pts, t0, t1) { for (var i2 = 0; i2 < pts.length - 1; i2++) { var A2 = pts[i2], B2 = pts[i2 + 1], mm = max(4, Math.ceil(Math.hypot(B2[0] - A2[0], B2[1] - A2[1]) * 14 * den)); for (var k2 = 0; k2 <= mm; k2++) { var tt = k2 / mm, w2 = P2(A2[0] + (B2[0] - A2[0]) * tt, A2[1] + (B2[1] - A2[1]) * tt); for (var rep = 0; rep < 3; rep++) add(w2[0] + (rnd() - .5) * .012, w2[1] + (rnd() - .5) * .012, w2[2], 7, t0 + (t1 - t0) * (i2 + tt) / (pts.length - 1)); } } };
+    var circ = []; for (j = 0; j <= 96; j++) circ.push([21 * cos(j / 96 * 2 * PI + PI / 2), 21 * sin(j / 96 * 2 * PI + PI / 2)]);
+    var dA = [[-2, 9], [-2, -9], [3, -9]]; for (j = 0; j <= 24; j++) { var an2 = -PI / 2 + j / 24 * PI; dA.push([3 + 9 * cos(an2), 9 * sin(an2)]); } dA.push([-2, 9]);
+    LG(circ, 0, .5); LG([[-9, 9], [-9, -9]], .5, .62); LG(dA, .62, .999);
   });
   // floating wire cubes, pillars, ground crosses
   tasks.push(function () {
@@ -238,22 +277,27 @@
     'q=vec3(cxf(z)+q.y*cos(th),cyf(z)-.45+abs(q.y*sin(th))*.75,z);al=(.12+.8*sd)*(.08+.92*lay.z)*smoothstep(0.,.03,u)*(1.-smoothstep(.97,1.,u));sz=.7+.7*sd;}' +
     'else if(k<3.5){q.x+=sin(u0.z*.3+sd*40.)*.15;q.y+=sin(u0.z*.23+sd*70.)*.12;al=.1+.32*(.5+.5*sin(u0.z*(.5+sd)+sd*90.));sz=.6+sd;}' +
     'else if(k<4.5){vec3 r=q-sc;float an=u0.z*.07;float c=cos(an),s=sin(an);q=sc+vec3(r.x*c+r.z*s,r.y,r.z*c-r.x*s);al=(.3+.55*sd)*(.2+.8*lay.x);}' +
-    'else if(k<5.5){al=(.3+.55*sd)*(.12+.88*lay.y);}else{q+=eye;al=sd;sz=6.;}' +
+    'else if(k<5.5){al=(.3+.55*sd)*(.12+.88*lay.y);}else if(k<6.5){q+=eye;al=sd;sz=6.;}else{q=sc+(q-sc)*(1.+.035*sin(u0.z*1.7));float hl=fract(u0.z*.28);float dd2=min(abs(sd-hl),1.-abs(sd-hl));al=.55+.45*exp(-dd2*dd2*90.);sz=1.5+exp(-dd2*dd2*90.);}' +
     'vec4 c=m*vec4(q,1.);c.xy+=u2.xy*c.w;float w=max(c.w,.001);vec2 asp=vec2(u1.x,1.);vec2 nd=c.xy/w;' +
     'vec2 dv=(nd-u2.zw)*asp;float dd=dot(dv,dv);float inf=exp(-dd/.045)*u1.w;' +                       // cursor lens
     'vec2 rv=(nd-u3.xy)*asp;float rd=length(rv);float rq=(rd-u3.z*1.7)/.13;float rw=exp(-rq*rq)*max(0.,1.-u3.z/1.3);' + // click ripple
     'c.xy+=(dv/max(sqrt(dd),.0001)*inf*.024+rv/max(rd,.0001)*rw*.035)/asp*w;gl_Position=c;' +
-    'float fog=k>5.5?1.:(1.-smoothstep(u1.y,u1.z,w))*smoothstep(.1,.6,w);float ps=u0.x*sz/w*(1.+inf*.3+rw*.7);float big=max(ps/(u0.x*.22),1.);' +
+    'float fog=(k>5.5&&k<6.5)?1.:(1.-smoothstep(u1.y,u1.z,w))*smoothstep(.1,.6,w);float ps=u0.x*sz/w*(1.+inf*.3+rw*.7);float big=max(ps/(u0.x*.22),1.);' +
     'gl_PointSize=clamp(ps,u3.w,u0.x*.9);a=min(1.,al*(1.+inf*.35+rw*.6))*fog/pow(big,1.25);}';
   var FS = 'precision mediump float;varying float a;void main(){vec2 q=gl_PointCoord-.5;float r=dot(q,q);if(r>.25)discard;gl_FragColor=vec4(.04,.04,.045,a*(1.-smoothstep(.1,.25,r)));}';
   function sh(type, src) { var o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; }
   var prog, U = {};
   try { prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link'); }
   catch (e) { if (W.console) console.warn('Landing scene is off:', e.message); root.classList.add('noscene'); return; }
+  var MVS = 'attribute vec4 a;uniform mat4 m;uniform vec4 u2;uniform vec2 fv;varying float g;void main(){vec4 c=m*vec4(a.xyz,1.);c.xy+=u2.xy*c.w;gl_Position=c;g=mix(.961,a.w,1.-smoothstep(fv.x,fv.y,c.w));}';
+  var MFS = 'precision mediump float;varying float g;void main(){gl_FragColor=vec4(g,g,g-.006,1.);}';
+  var mprog = null, MU = {}, mbuf, ibuf, mn = 0, pbuf, AP, MA;
+  try { mprog = gl.createProgram(); gl.attachShader(mprog, sh(gl.VERTEX_SHADER, MVS)); gl.attachShader(mprog, sh(gl.FRAGMENT_SHADER, MFS)); gl.linkProgram(mprog); if (!gl.getProgramParameter(mprog, gl.LINK_STATUS)) mprog = null; } catch (e) { mprog = null; }
+  if (mprog) ['m', 'u2', 'fv'].forEach(function (k) { MU[k] = gl.getUniformLocation(mprog, k); });
   gl.useProgram(prog);
   ['m', 'u0', 'u1', 'u2', 'u3', 'lay', 'sc', 'eye'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
   gl.uniform3f(U.sc, SC[0], SC[1], SC[2]);
-  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.clearColor(.961, .961, .953, 1);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.clearColor(.961, .961, .953, 1); gl.depthFunc(gl.LEQUAL); gl.polygonOffset(2, 6);
 
   // ---- camera ----
   function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
@@ -293,7 +337,8 @@
   var hudEl = D.querySelector('.hud'), fixedR = null, A = [0], rects = [], end = 1e9, cssW = 1, cssH = 1, dprCap = lite ? 1 : small ? 1.5 : 1.75, veil = D.querySelector('.veil'), veilLast = -1;
   function measure() {
     var sy = W.scrollY, vh = W.innerHeight;
-    rects = blocks.map(function (b) { if (!b) return null; var r = b.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top + sy, b: r.bottom + sy }; });
+    // layout boxes (ignore the fly-in transforms, which make bounding rects huge)
+    rects = blocks.map(function (b) { if (!b) return null; var t = 0, l = 0, e = b; while (e) { t += e.offsetTop; l += e.offsetLeft; e = e.offsetParent; } return { l: l, r: l + b.offsetWidth, t: t, b: t + b.offsetHeight }; });
     var hr = hudEl && hudEl.getBoundingClientRect(); fixedR = hr && hr.width ? hr : null;
     var narrow = W.innerWidth <= 820;                    // narrow screens: text sits at the bottom, the scene above it
     A = secs.map(function (s, i) { var q = rects[i]; return !i || !q ? 0 : max(1, narrow && q.b - q.t < vh - 150 ? q.b - vh + 28 : narrow ? q.t - 100 : (q.t + q.b) / 2 - vh / 2); });
@@ -333,14 +378,23 @@
     var M = mul(persp(f, wide, .05, 80), look(e, tg, k[6] + mx * .035));
     var ox = port ? 0 : k[8] * min(1, max(0, (wide - 1) / .5)), oy = port ? k[9] : 0;
     ['dots', 'lines', 'pins'].forEach(function (key) { lay[key] += ((layers[key] ? 1 : 0) - lay[key]) * (reduce ? 1 : min(1, dt * 9)); });
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.useProgram(prog); gl.bindBuffer(gl.ARRAY_BUFFER, pbuf); gl.vertexAttribPointer(AP, 4, gl.FLOAT, false, 0, 0);
     gl.uniformMatrix4fv(U.m, false, M);
     gl.uniform4f(U.u0, (port ? .025 : .016) * cv.height / (2 * Math.tan(f / 2)), L, T, ST);
     gl.uniform4f(U.u1, wide, 13, 30, ms);
     gl.uniform4f(U.u2, ox, oy, mpx, mpy);
     gl.uniform4f(U.u3, rpx, rpy, ra, 1.25 * cv.height / cssH);
     gl.uniform3f(U.lay, lay.dots, lay.lines, lay.pins); gl.uniform3f(U.eye, e[0], e[1], e[2]);
-    c = floor(cnt[NB + 1] * frac); if (c) gl.drawArrays(gl.POINTS, st[NB + 1], c);
+    gl.disable(gl.DEPTH_TEST); c = floor(cnt[NB + 1] * frac); if (c) gl.drawArrays(gl.POINTS, st[NB + 1], c);
+    if (mprog && mn) {
+      gl.useProgram(mprog); gl.uniformMatrix4fv(MU.m, false, M); gl.uniform4f(MU.u2, ox, oy, 0, 0); gl.uniform2f(MU.fv, 13, 30);
+      gl.bindBuffer(gl.ARRAY_BUFFER, mbuf); gl.vertexAttribPointer(MA, 4, gl.FLOAT, false, 0, 0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuf);
+      gl.enable(gl.DEPTH_TEST); gl.depthMask(true); gl.enable(gl.POLYGON_OFFSET_FILL); gl.disable(gl.BLEND);
+      gl.drawElements(gl.TRIANGLES, mn, gl.UNSIGNED_SHORT, 0);
+      gl.disable(gl.POLYGON_OFFSET_FILL); gl.enable(gl.BLEND); gl.depthMask(false);
+      gl.useProgram(prog); gl.bindBuffer(gl.ARRAY_BUFFER, pbuf); gl.vertexAttribPointer(AP, 4, gl.FLOAT, false, 0, 0);
+    }
     var b0 = max(0, floor((Z0 - (e[2] + 8)) / BW)), b1 = min(NB - 1, floor((Z0 - (e[2] - 33)) / BW)), b, c;
     for (b = b0; b <= b1; b++) { c = floor(cnt[b] * frac); if (c) gl.drawArrays(gl.POINTS, st[b], c); }
     c = floor(cnt[NB] * frac); if (c) gl.drawArrays(gl.POINTS, st[NB], c);
@@ -432,8 +486,13 @@
     for (b = 0; b < total; b++) for (i = cnt[b] - 1; i > 0; i--) { var j = floor(r2() * (i + 1)), a = st[b] + i, c = st[b] + j, t = idx[a]; idx[a] = idx[c]; idx[c] = t; }
     var out = new Float32Array(N * 4); for (i = 0; i < N; i++) { var o = idx[i] * 4, d = i * 4; out[d] = buf[o]; out[d + 1] = buf[o + 1]; out[d + 2] = buf[o + 2]; out[d + 3] = buf[o + 3]; }
     buf = bk = null;
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, out, gl.STATIC_DRAW);
-    var ap = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 4, gl.FLOAT, false, 0, 0);
+    pbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pbuf); gl.bufferData(gl.ARRAY_BUFFER, out, gl.STATIC_DRAW);
+    AP = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(AP);
+    if (mprog && mesh) {
+      MA = gl.getAttribLocation(mprog, 'a'); gl.enableVertexAttribArray(MA);
+      mbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, mbuf); gl.bufferData(gl.ARRAY_BUFFER, mesh.v, gl.STATIC_DRAW);
+      ibuf = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuf); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.i, gl.STATIC_DRAW); mn = mesh.n; mesh = null;
+    }
     if (hud.n) hud.n.textContent = N.toLocaleString('ru-RU');
     ready = true; resize(); cur = reduce ? Math.round(scrollP()) : scrollP(); onScroll();
   }
