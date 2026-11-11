@@ -320,6 +320,7 @@
       toggle.classList.toggle('on', open); toggle.setAttribute('aria-pressed', String(open));
       try { localStorage.setItem(OPEN_KEY, open ? '1' : '0'); } catch (e) { /* ignore */ }
       if (open && !loaded) load();
+      if (open) document.dispatchEvent(new Event('journal:briefing-open'));
     };
     toggle.onclick = () => setOpen(!document.body.classList.contains('brief-open'));
     close.onclick = () => setOpen(false);

@@ -404,3 +404,76 @@ body.perf .dl{filter:none}
 body.perf *,body.perf *::before,body.perf *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 body.perf .quick-actions .float,body.perf .nav{box-shadow:none}
 .quick-actions .float.lang{font:600 .78rem/1 Inter,system-ui,sans-serif;letter-spacing:.04em}
+
+/* ---- phase 6: achievements. Rarity = number of dotted rings (1..5) around the medal, plus a muted tint.
+   The page is a working screen: quiet cards, colour only on the medal, the rarity word and progress. ---- */
+body{--r1:#9a94b8;--r2:#34d399;--r3:#60a5fa;--r4:#b18cff;--r5:#f2b84b}
+body.paper{--r1:#7d7f87;--r2:#16835a;--r3:#2160d8;--r4:#7a3fe0;--r5:#a8700f}
+.ach{max-width:1120px;margin:0 auto}
+.ach .r1{--rc:var(--r1)}.ach .r2,.ach-pop.r2,.ach-badge.r2{--rc:var(--r2)}.ach .r3,.ach-pop.r3,.ach-badge.r3{--rc:var(--r3)}.ach .r4,.ach-pop.r4,.ach-badge.r4{--rc:var(--r4)}.ach .r5,.ach-pop.r5,.ach-badge.r5{--rc:var(--r5)}
+.ach-pop.r1,.ach-badge.r1{--rc:var(--r1)}
+.ach-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 10px}
+.ach-head h2{margin:0;font-size:1.6rem;font-weight:600;letter-spacing:-.03em}
+.ach-count{margin:0;color:var(--mu);font-variant-numeric:tabular-nums}.ach-count b{color:var(--tx);font-size:1.5rem;font-weight:600;letter-spacing:-.02em}
+.ach-dist{display:flex;gap:4px;margin:0 0 18px}
+.ach-dseg{min-width:0;display:flex;flex-direction:column;gap:5px}
+.ach-dseg>i{display:block;height:4px;border-radius:2px;background:var(--rc);box-shadow:inset 0 0 0 999px transparent;position:relative}
+.ach-dseg{position:relative}.ach-dseg::before{content:"";position:absolute;inset:0 0 auto;height:4px;border-radius:2px;background:var(--bd)}
+.ach-dseg>i{position:relative;z-index:1;min-width:0}
+.ach-dseg>span{font-size:.72rem;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.ach-show{border:1px solid var(--bd);border-radius:14px;padding:12px 14px;margin:0 0 14px;background:var(--pn)}
+.ach-show-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:10px}.ach-show-h h3{margin:0;font-size:1rem}.ach-show-h .mu{font-size:.82rem}
+.ach-slots{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.ach-slot{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;border-radius:10px;border:1px dashed var(--bd);background:transparent;color:var(--tx);font:inherit;font-size:.74rem;min-height:84px;justify-content:center;cursor:pointer;text-align:center}
+.ach-slot.on{border-style:solid}.ach-slot:disabled{cursor:default}
+.ach-slot>i{width:30px;height:30px;border-radius:50%;border:1.5px dotted var(--bd)}
+.ach-slot>span{line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ach-slot.on:hover{border-color:var(--rc,var(--ac))}
+.ach-filters{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0 0 6px}
+.ach-seg{display:flex;flex-wrap:wrap;gap:4px}.ach-seg .s{padding:5px 11px;font-size:.82rem}
+.ach-seg .s.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.ach-group{margin:16px 0 4px}.ach-group>h3{margin:0 0 8px;font-size:.9rem;font-weight:600;color:var(--mu)}
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ach-card{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--bd);border-radius:12px;background:var(--pn);min-width:0}
+.ach-card.got{border-color:color-mix(in srgb,var(--rc) 38%,var(--bd))}
+.ach-tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}
+.ach-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ach-top b{font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.ach-rar{font-size:.72rem;color:var(--rc);white-space:nowrap}
+.ach-tx p{margin:0;font-size:.85rem;color:var(--mu);line-height:1.4}
+.ach-card:not(.got) .ach-top b{color:color-mix(in srgb,var(--tx) 78%,transparent)}
+.ach-prog{height:3px;border-radius:2px;background:var(--bd);overflow:hidden;margin-top:3px}.ach-prog>i{display:block;height:100%;background:var(--rc);border-radius:2px}
+.ach-tx>.mu{font-size:.74rem;font-variant-numeric:tabular-nums}
+.ach-ft{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 8px;margin-top:auto;padding-top:4px;font-size:.76rem}
+.ach-card{align-items:stretch}.ach-card>.ach-medal{align-self:flex-start}
+.ach .ach-pin{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;min-height:0;font-size:.76rem;line-height:1.2;white-space:nowrap;border-radius:999px}.ach-pin svg{width:13px;height:13px}
+.ach-pin.on{border-color:var(--rc);color:var(--rc)}
+.ach-note{font-size:.8rem;margin:18px 0 6px}
+/* medal */
+.ach-medal{flex:none;overflow:visible}
+.ach-medal .ring{fill:none;stroke:var(--rc,var(--mu));stroke-width:1.25;stroke-linecap:round;stroke-dasharray:.01 2.35;opacity:.32}
+.ach-medal .disc{fill:none;stroke:var(--bd);stroke-width:1.4}
+.ach-medal .arc{fill:none;stroke:var(--rc);stroke-width:2;stroke-linecap:round}
+.ach-medal .ic{fill:none;stroke:var(--mu);stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
+.ach-medal.got .ring{opacity:1}
+.ach-medal.got .disc{fill:color-mix(in srgb,var(--rc) 14%,transparent);stroke:var(--rc)}
+.ach-medal.got .ic{stroke:var(--tx);opacity:1}
+body:not(.mo-off):not(.perf) .ach-medal.got.r5 .ring{animation:achShimmer 3.6s ease-in-out infinite;animation-delay:calc(var(--k)*.22s)}
+@keyframes achShimmer{0%,100%{opacity:.55}50%{opacity:1}}
+/* fresh (earned since the last visit): the rings ripple out once */
+.ach-card.fresh{animation:achFresh 1.4s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--i,0)*70ms)}
+@keyframes achFresh{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--rc) 45%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+/* profile badges */
+.ach-badges{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.ach-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border:1px solid color-mix(in srgb,var(--rc) 40%,var(--bd));border-radius:999px;font-size:.78rem}
+/* unlock moment */
+.ach-pop{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom,0px));z-index:120;display:flex;align-items:center;gap:14px;width:max-content;max-width:min(440px,calc(100vw - 32px));box-sizing:border-box;padding:12px 18px 12px 12px;border-radius:16px;background:var(--pn);border:1px solid color-mix(in srgb,var(--rc) 45%,var(--bd));box-shadow:0 18px 50px rgba(0,0,0,.35);color:var(--tx);cursor:pointer;translate:-50% 24px;opacity:0;transition:translate .5s cubic-bezier(.16,1,.3,1),opacity .3s}
+body:not(.paper) .ach-pop{background:#120e20}
+.ach-pop.in{translate:-50% 0;opacity:1}.ach-pop.out{translate:-50% 12px;opacity:0}
+.ach-pop-t{display:flex;flex-direction:column;gap:2px;min-width:0}.ach-pop-t small{color:var(--rc);font-size:.75rem}.ach-pop-t b{font-size:1.02rem}.ach-pop-t span{font-size:.82rem;color:var(--mu)}
+.ach-pop.in .ach-medal .ring{animation:achRing 1.1s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(.15s + var(--k)*.09s);transform-origin:32px 32px}
+.ach-pop.in .ach-medal .disc,.ach-pop.in .ach-medal .ic{animation:achDisc .6s cubic-bezier(.34,1.56,.64,1) both;transform-origin:32px 32px}
+@keyframes achRing{from{opacity:0;transform:scale(.7)}}
+@keyframes achDisc{from{opacity:0;transform:scale(.6)}}
+@media (max-width:640px){.ach-pop{bottom:calc(84px + env(safe-area-inset-bottom,0px));width:calc(100vw - 32px)}.ach-slots{grid-template-columns:repeat(3,minmax(0,1fr))}.ach-grid{grid-template-columns:1fr}.ach-dseg>span{font-size:.64rem}}
+@media (prefers-reduced-motion:reduce){.ach-card.fresh,.ach-pop .ach-medal *,.ach-medal .ring{animation:none!important}.ach-pop{transition:opacity .2s}}

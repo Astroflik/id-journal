@@ -378,6 +378,33 @@ def main():
         check('language: back to RU restores the original text', ru == ['ru', True, 'EN'], ru)
         tab.evaluate("go('stats')"); tab.wait_for_function("view==='stats'&&!World.flying()", timeout=5000)
         check('any old look moves to night once', tab.evaluate("(()=>{const s=JSON.stringify(CFG.look);CFG.look={style:'mono'};applyLook();const a=LOOK.style;CFG.look.style='paper';applyLook();const b=LOOK.style;CFG.look=JSON.parse(s);applyLook();return a==='night'&&b==='paper'})()"))
+        # achievements (phase 6): one config, process-only conditions, page, showcase, unlock moment
+        cfgok = tab.evaluate("(()=>{const L=ACH.list,ids=new Set(L.map(a=>a.id));return [L.length,ids.size===L.length,L.every(a=>/^[a-z0-9_]{2,32}$/.test(a.id)&&a.r>=1&&a.r<=5&&a.ru.length===2&&a.en.length===2&&a.goal>0&&typeof a.v==='function'),[1,2,3,4,5].every(r=>L.some(a=>a.r===r))]})()")
+        check('achievements: 30-40 in one config, unique ids, all 5 rarities, RU and EN', 30 <= cfgok[0] <= 40 and cfgok[1:] == [True, True, True], cfgok)
+        tab.keyboard.press('8'); tab.wait_for_function("view==='ach'&&!World.flying()", timeout=6000); tab.wait_for_timeout(300)
+        check('achievements: key 8 flies to the tab, trophy icon on the bar', tab.evaluate("document.querySelectorAll('#v .ach-card').length===ACH.list.length&&!!document.querySelector('#nav .big[data-k=ach] .ico.trophy')"))
+        tab.locator('#v .ach-seg.rar button', has_text='Редкая').click(); tab.wait_for_timeout(200)
+        check('achievements: rarity filter shows only that rarity', tab.evaluate("(()=>{const c=[...document.querySelectorAll('#v .ach-card')];return c.length===ACH.list.filter(a=>a.r===3).length&&c.every(x=>x.classList.contains('r3'))})()"))
+        tab.locator('#v .ach-seg.rar button', has_text='Все').click(); tab.wait_for_timeout(200)
+        tab.evaluate("(async()=>{await store.save('trades',{date:'2026-11-03',inst:'NQ',res:'Стоп',kind:'Реверс',side:'Long',time:'10:00',grade:'A',emo:'Спокойно',cvd:'Buy Absorption',tape:'On',poc:'Тело',zero:'Нет',risk:'0.5',desc:'entry at VAL',shots:['s']});await store.save('plans',{date:'2026-11-03',plan:'long from VAL',done:'Не сбылся',sum:'no setup'})})()")
+        tab.wait_for_timeout(900); tab.evaluate("ACH.check()")
+        got = tab.evaluate("Object.keys(CFG.ach.got)")
+        check('achievements: a documented trade and a closed plan unlock the first ones', all(k in got for k in ['first_entry', 'first_plan', 'first_shot', 'full_card']) and 'streak_3' not in got, got)
+        tab.evaluate("delete CFG.ach.got.first_shot;ACH.check({loud:true})")
+        try: tab.wait_for_function("[...document.querySelectorAll('.ach-pop b')].some(b=>b.textContent==='Кадр')", timeout=12000); popped = True
+        except Exception: popped = False
+        check('achievements: a new one shows the unlock card', popped and tab.evaluate("!!CFG.ach.got.first_shot"))
+        pins = tab.evaluate("(()=>{CFG.ach.pin=[];['first_entry','first_plan','first_shot','full_card'].forEach(ACH.togglePin);ACH.togglePin('master');CFG.ach.got={...CFG.ach.got,a1:'x',a2:'x'};const n=CFG.ach.pin.length;return [n,document.querySelectorAll('#v .ach-slot.on').length,CFG.ach.pin.includes('master')]})()")
+        check('achievements: only earned ones go to the showcase', pins == [4, 4, False], pins)
+        full = tab.evaluate("(()=>{const ids=ACH.list.map(a=>a.id).slice(0,7);ids.forEach(i=>CFG.ach.got[i]=CFG.ach.got[i]||'2026-11-01');CFG.ach.pin=[];ids.forEach(ACH.togglePin);return CFG.ach.pin.length})()")
+        check('achievements: showcase holds at most 6', full == 6, full)
+        check('achievements: showcase stays private until migration 0005 is on the server', tab.evaluate("document.querySelector('#v .ach-show-h .mu').textContent.includes('только вы')"))
+        tab.evaluate("document.dispatchEvent(new Event('journal:briefing-open'))")
+        check('achievements: opening the briefing is counted once a day', tab.evaluate("CFG.ach.brief.filter(d=>d===today()).length===1"))
+        tab.locator('.quick-actions .float.lang').click(); tab.wait_for_timeout(500)
+        ae = tab.evaluate("[document.querySelector('#v .ach-head h2').textContent,document.querySelector('#v .ach-card b').textContent,/[А-Яа-яЁё]/.test(document.querySelector('#v .ach').innerText)]")
+        check('achievements: English names and no Russian on the page in EN', ae == ['Achievements', 'First entry', False], ae)
+        tab.locator('.quick-actions .float.lang').click(); tab.wait_for_timeout(300)
         page.context.close()
 
 

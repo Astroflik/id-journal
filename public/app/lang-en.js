@@ -1,6 +1,14 @@
 /* Russian -> English phrases for everything the journal, clans and briefing print. Generated once from the sources, edited by hand.
    Matching is by whole phrase, longest first (see i18n.js). Add new strings here. */
 I18N.phrases({
+"Не удалось сохранить витрину ачивок": "Could not save the achievement showcase",
+"Неверная настройка приватности": "Invalid privacy setting",
+"Все пользователи": "All users",
+"Только мой клан": "Only my clan",
+"Только я": "Only me",
+"Кто видит профиль": "Who sees the profile",
+"Ник, фото и тег клана видны всем: они нужны в чате. О себе, ссылки, соцсети и витрина ачивок — по этой настройке.": "Nick, photo and clan tag are visible to everyone: the chat needs them. About me, links, socials and the achievement showcase follow this setting.",
+"Профиль скрыт настройками приватности.": "The profile is hidden by its privacy settings.",
 "А что если и Сетапы": "What if and Setups",
 "Автосводка": "Auto summary",
 "Автосводка по периоду, твоя заметка и оценка от": "Auto summary for the period, your note and the rating from",
@@ -143,7 +151,7 @@ I18N.phrases({
 "Журнал и сделки": "Journal and trades",
 "Журнал открыт только для просмотра и экспорта. Чтобы получить доступ, напиши": "The journal is open for viewing and export only. To get access, write to",
 "Журнал появляется на": "The journal appears on",
-"Журнал состоит из экранов: План на день, Статистика, Журнал, Граф, А что если, Сетапы, Разбор.": "The journal consists of screens: Day plan, Statistics, Journal, Graph, What if, Setups, Review.",
+"Журнал состоит из экранов: План на день, Статистика, Журнал, Граф, А что если, Сетапы, Разбор, Ачивки.": "The journal consists of screens: Day plan, Statistics, Journal, Graph, What if, Setups, Review, Achievements.",
 "Журнал станет только для просмотра, профиль, клан и чат закроются для записи. Причину человек увидит.": "The journal becomes view-only, and profile, clan and chat are closed for writing. The person will see the reason.",
 "За сколько последних дней выгрузить сделки и планы?": "For how many recent days should trades and plans be exported?",
 "За этот период записей нет.": "No records for this period.",
@@ -394,7 +402,7 @@ I18N.phrases({
 "Пароль": "Password",
 "Первый вход открывает пробный период на 14 дней, карта не нужна. Данные журнала синхронизируются с аккаунтом.": "The first sign-in starts a 14-day trial, no card needed. The journal data syncs with the account.",
 "Передать главу": "Hand over leadership",
-"Переключайся кнопками сверху или клавишами 0–7.": "Switch with the buttons at the top or the 0–7 keys.",
+"Переключайся кнопками сверху или клавишами 0–8.": "Switch with the buttons at the top or the 0–8 keys.",
 "Переливающийся градиент": "Shimmering gradient",
 "Пиши план свободным текстом, а в конце дня выбери «Сбылся / Частично / Не сбылся» и напиши итог.": "Write the plan as free text, and at the end of the day choose “Came true / Partly / Did not come true” and write the result.",
 "План": "Plan",

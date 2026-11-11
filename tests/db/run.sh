@@ -26,6 +26,9 @@ $(run -f "$here/checks_0003.sql" 2>&1)" || { echo "$out"; echo "CHECK SCRIPT ERR
 run -f "$mig/0004_social_moderation.sql"
 out="$out
 $(run -f "$here/checks_0004.sql" 2>&1)" || { echo "$out"; echo "CHECK SCRIPT ERROR (0004)"; exit 1; }
+run -f "$mig/0005_profile_showcase.sql"
+out="$out
+$(run -f "$here/checks_0005.sql" 2>&1)" || { echo "$out"; echo "CHECK SCRIPT ERROR (0005)"; exit 1; }
 echo "$out" | grep -E '^(PASS|FAIL) ' || true
 if echo "$out" | grep -q '^FAIL '; then echo "FAILED"; exit 1; fi
 echo "ALL PASS ($(echo "$out" | grep -c '^PASS ') checks)"

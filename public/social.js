@@ -19,9 +19,11 @@
     details_invalid: 'Опишите подробнее: от 5 до 2000 знаков', evidence_invalid: 'Не удалось прикрепить фото', too_many_files: 'Не больше 4 фото',
     too_many_reports: 'Не больше 10 жалоб в сутки', cannot_report_self: 'Нельзя пожаловаться на себя', user_not_found: 'Пользователь не найден',
     category_invalid: 'Выберите причину', reason_invalid: 'Причина: от 3 до 300 знаков', cannot_ban_admin: 'Админа заблокировать нельзя',
-    days_invalid: 'Срок от 1 до 3650 дней', forbidden: 'Нужны права администратора'
+    days_invalid: 'Срок от 1 до 3650 дней', forbidden: 'Нужны права администратора',
+    pinned_invalid: 'Не удалось сохранить витрину ачивок', visibility_invalid: 'Неверная настройка приватности'
   };
   const ROLE = { leader: 'глава', officer: 'офицер', member: 'участник' };
+  const VIS = [['all', 'Все пользователи'], ['clan', 'Только мой клан'], ['self', 'Только я']];
   const S = { me: null, loading: null };
 
   async function rpc(name, args) {
@@ -136,6 +138,7 @@
       S.me = await rpc('save_profile', { nick: nick.value.trim(), bio: bio.value.trim(), links: ls, avatar_path: avatar });
       const nso = { discord: dc.value.trim(), telegram: tg.value.trim(), tiktok: tt.value.trim() }, oso = me.socials || {};
       if (['discord', 'telegram', 'tiktok'].some(k => (nso[k] || '') !== (oso[k] || ''))) S.me = await rpc('save_socials', nso);
+      if (visF && vis.value !== (me.visibility || 'all')) S.me = await rpc('save_showcase', { pinned: null, visibility: vis.value });
       if (old && old !== avatar) dropFile(old);
       refreshNav(); toast('Профиль сохранён'); profileTab(box)
     });
@@ -147,7 +150,10 @@
     const nf = field('Ник', nick, 'От 3 до 20 знаков: буквы, цифры, _ . -. Ник уникален: похожие на чужой (другой регистр, 0 вместо O, русские буквы вместо латинских) не принимаются.'); nf.append(nickHint);
     const so = me.socials || {}, dc = inp(so.discord, 'имя в Discord', 40), tg = inp(so.telegram, '@имя или ссылка t.me', 64), tt = inp(so.tiktok, '@имя или ссылка tiktok.com', 80);
     const soc = el('div', 'so-socials'); soc.append(field('Discord', dc), field('Telegram', tg), field('TikTok', tt));
-    box.replaceChildren(top, nf, field('О себе', bio), el('span', 'so-lbl', 'Соцсети'), soc, el('span', 'so-lbl', 'Другие ссылки'), links, more, el('div', 'bar', ''), save, me.nick ? card : el('div', 'mu so-gap', 'Ник нужен, чтобы вступить в клан или создать свой.'));
+    const vis = el('select'); VIS.forEach(([k, l]) => vis.append(new Option(l, k))); vis.value = me.visibility || 'all';
+    const visF = Array.isArray(me.achievements) && me.nick ? field('Кто видит профиль', vis, 'Ник, фото и тег клана видны всем: они нужны в чате. О себе, ссылки, соцсети и витрина ачивок — по этой настройке.') : null;
+    const pins = window.ACH && Array.isArray(me.achievements) ? ACH.badges(me.achievements) : null; if (pins) card.append(pins);
+    box.replaceChildren(...[top, nf, field('О себе', bio), el('span', 'so-lbl', 'Соцсети'), soc, el('span', 'so-lbl', 'Другие ссылки'), links, more, visF, el('div', 'bar', ''), save, me.nick ? card : el('div', 'mu so-gap', 'Ник нужен, чтобы вступить в клан или создать свой.')].filter(Boolean));
   }
 
   // ---------------------------------------------------------------- clan
@@ -307,6 +313,8 @@
       const top = el('div', 'so-row'); top.append(face(p.avatar_path, p.nick, 64, 'big'), nameLine(p.nick, p.clan));
       const x = el('button', 's', '✕'); x.type = 'button'; x.setAttribute('aria-label', 'Закрыть'); x.onclick = close; top.append(x); m.append(top);
       if (p.clan) m.append(el('div', 'mu', 'Клан «' + p.clan.name + '» · ' + (ROLE[p.clan.role] || '')));
+      if (p.hidden) m.append(el('p', 'mu', 'Профиль скрыт настройками приватности.'));
+      const pins = window.ACH && ACH.badges(p.achievements); if (pins) m.append(pins);
       if (p.bio) m.append(el('p', null, p.bio));
       const sc = socialChips(p.socials); if (sc) m.append(sc);
       if ((p.links || []).length) { const lw = el('div', 'so-chips'); p.links.forEach(l => { const a = el('a', null, l.label || l.url.replace(/^https:\/\//, '')); a.href = l.url; a.target = '_blank'; a.rel = 'noopener nofollow'; lw.append(a) }); m.append(lw) }
@@ -483,6 +491,8 @@
     };
     if (A.user) A.updateNav()
   }
-  window.SOCIAL = { open, load, openCard, report, myReports, toggleChat, get me() { return S.me } };
+  // achievement showcase (migration 0005): null leaves a field as it is
+  async function saveShowcase(pinned, visibility) { S.me = await rpc('save_showcase', { pinned: pinned ?? null, visibility: visibility ?? null }); return S.me }
+  window.SOCIAL = { open, load, openCard, report, myReports, toggleChat, saveShowcase, get me() { return S.me } };
   hook()
 })();
