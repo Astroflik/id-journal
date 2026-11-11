@@ -10,10 +10,10 @@ const store={
   async init(){try{T=JSON.parse(localStorage.getItem('jt')||'[]');P=JSON.parse(localStorage.getItem('jp')||'[]');if(T.length||P.length){ready=true;render()}}catch(e){}try{const c=window.claude&&await window.claude.use('db');if(c){db=c;}}catch(e){}try{assets=window.claude&&await window.claude.use('assets')}catch(e){}
     if(db){for(const k of['trades','plans'])db.collection(k).onSnapshot(s=>{const a=s.docs.map(d=>({id:d.id,...d.data()}));const mg='jm_'+k,lk=k==='trades'?'jt':'jp';try{const first=!localStorage.getItem(mg);localStorage.setItem(mg,'1');if(!a.length&&first){JSON.parse(localStorage.getItem(lk)||'[]').forEach(x=>store.save(k,x).catch(e=>toast('Не удалось перенести запись: '+(e.code||e.message))))}else localStorage.setItem(lk,JSON.stringify(a))}catch(e){}k==='trades'?T=a:P=a;ready=true;render()},()=>{})}
     else{try{T=JSON.parse(localStorage.getItem('jt')||'[]');P=JSON.parse(localStorage.getItem('jp')||'[]')}catch(e){}ready=true;render()}},
-  async save(k,o,sync=false){const id=o.id!=null&&o.id!==''?String(o.id):'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);const d={...o};delete d.id;
+  async save(k,o,sync=false){if(accountApi.readOnly)throw new Error(accountApi.READ_ONLY);const id=o.id!=null&&o.id!==''?String(o.id):'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);const d={...o};delete d.id;
     if(db)await db.collection(k).doc(id).set(JSON.parse(JSON.stringify(d)));else{const a=k==='trades'?T:P;const i=a.findIndex(x=>String(x.id)===String(id));const r={...d,id};i<0?a.push(r):a[i]=r;localStorage.setItem(k==='trades'?'jt':'jp',JSON.stringify(a));render()}
     if(sync)await accountApi.flush()},
-  async del(k,id,sync=false){if(db)await db.collection(k).doc(String(id)).delete();else{const a=(k==='trades'?T:P).filter(x=>String(x.id)!==String(id));k==='trades'?T=a:P=a;localStorage.setItem(k==='trades'?'jt':'jp',JSON.stringify(a));render()}
+  async del(k,id,sync=false){if(accountApi.readOnly)throw new Error(accountApi.READ_ONLY);if(db)await db.collection(k).doc(String(id)).delete();else{const a=(k==='trades'?T:P).filter(x=>String(x.id)!==String(id));k==='trades'?T=a:P=a;localStorage.setItem(k==='trades'?'jt':'jp',JSON.stringify(a));render()}
     if(sync)await accountApi.flush()}
 };
 // ---- maths ----
@@ -164,9 +164,9 @@ const idb=()=>new Promise((res,rej)=>{const q=indexedDB.open('jmedia',1);q.onupg
 const mget=async k=>{try{const d=await idb();return await new Promise(res=>{const q=d.transaction('m').objectStore('m').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})}catch(e){return null}};
 const mput=async(k,v)=>{try{const d=await idb();await new Promise((res,rej)=>{const tx=d.transaction('m','readwrite');v===null?tx.objectStore('m').delete(k):tx.objectStore('m').put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});return true}catch(e){return false}};
 const SHOTS={mem:new Map(),
- ref(){const u=accountApi.user,f=accountApi.firestore;return u&&u.uid&&f?f.collection('users').doc(u.uid).collection('journal'):null},
- async get(s){if(!s)return null;if(s.url)return s.url;if(this.mem.has(s.id))return this.mem.get(s.id);let v=await mget('shot:'+s.id);if(!v){const r=this.ref();if(r){try{const d=await r.doc('shot_'+s.id).get();if(d.exists&&typeof d.data().data==='string'){v=d.data().data;mput('shot:'+s.id,v)}}catch(e){}}}if(v)this.mem.set(s.id,v);return v||null},
- async put(s,data){this.mem.set(s.id,data);const okL=await mput('shot:'+s.id,data);if(accountApi.user&&!accountApi.firebaseMode)return false;const r=this.ref();if(!r)return okL;try{await r.doc('shot_'+s.id).set({data,ts:Date.now()});return okL}catch(e){console.warn('Shot upload failed',e);return false}},
+ path(s){const u=accountApi.user;return accountApi.cloud&&u&&u.uid&&/^[\w-]{1,64}$/.test(String(s.id))?u.uid+'/'+s.id:null},
+ async get(s){if(!s)return null;if(s.url)return s.url;if(this.mem.has(s.id))return this.mem.get(s.id);let v=await mget('shot:'+s.id);if(!v){const p=this.path(s);if(p){try{const{data,error}=await accountApi.sb.storage.from('shots').download(p);if(!error&&data&&/^image\//.test(data.type)){v=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(data)});mput('shot:'+s.id,v)}}catch(e){}}}if(v)this.mem.set(s.id,v);return v||null},
+ async put(s,data){this.mem.set(s.id,data);const okL=await mput('shot:'+s.id,data);if(!accountApi.user)return okL;const p=this.path(s);if(!p||accountApi.readOnly||!/^data:image\//.test(String(data)))return false;try{const blob=await(await fetch(data)).blob();if(blob.size>2*1024*1024)throw new Error('Screenshot is larger than 2 MB');const{error}=await accountApi.sb.storage.from('shots').upload(p,blob,{upsert:true,contentType:blob.type||'image/jpeg'});if(error)throw error;return okL}catch(e){console.warn('Shot upload failed',e);return false}},
  bind(im,s){im.alt='Скриншот сделки';this.get(s).then(u=>{if(u)im.src=u});im.onclick=async()=>{const u=await this.get(s);u?openShot(u):toast('Скриншот не найден на этом устройстве')}}
 };
 async function migrateShots(){try{let ch=false;for(const arr of[T,P])for(const rec of arr||[])for(const s of rec.shots||[])if(s&&s.url&&s.id&&await SHOTS.put(s,s.url)){delete s.url;ch=true}if(ch){localStorage.setItem('jt',JSON.stringify(T));localStorage.setItem('jp',JSON.stringify(P));toast('Фото перенесены в отдельное хранилище ✓')}}catch(e){console.warn('Shot migration failed',e)}}
@@ -392,73 +392,164 @@ new MutationObserver(ms=>ms.forEach(r=>r.addedNodes.forEach(n=>{if(n.nodeType===
 function logoEl(){const d=el('div','logo-wrap');d.innerHTML=`<svg class='logo' viewBox='0 0 320 180'><defs><linearGradient id='lg1' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#fff'/><stop offset='.5' stop-color='#c4b5fd'/><stop offset='1' stop-color='#7c3aed'/></linearGradient><linearGradient id='lg2' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='#c4b5fd' stop-opacity='0'/><stop offset='.5' stop-color='#e9d5ff'/><stop offset='1' stop-color='#8b5cf6' stop-opacity='0'/></linearGradient></defs><ellipse class='ring' cx='160' cy='90' rx='150' ry='58' pathLength='1'/><g class='pt' style='--fx:-90px;--fy:-30px;--fr:-40deg;--d:0s'><rect x='62' y='28' width='62' height='20' rx='10' fill='url(#lg1)'/></g><g class='pt' style='--fx:0px;--fy:-90px;--fr:20deg;--d:.12s'><rect x='82' y='40' width='22' height='100' rx='8' fill='url(#lg1)'/></g><g class='pt' style='--fx:90px;--fy:50px;--fr:40deg;--d:.24s'><rect x='62' y='132' width='62' height='20' rx='10' fill='url(#lg1)'/></g><g class='pt' style='--fx:0px;--fy:-110px;--fr:-25deg;--d:.36s'><rect x='152' y='28' width='22' height='124' rx='9' fill='url(#lg1)'/></g><g class='pt' style='--fx:150px;--fy:0px;--fr:90deg;--d:.5s'><path d='M174 38H200A52 52 0 0 1 200 142H174' fill='none' stroke='url(#lg1)' stroke-width='22' stroke-linecap='round' stroke-linejoin='round'/></g><circle class='sp' cx='30' cy='60' r='3' fill='#fff' style='--d:1s'/><circle class='sp' cx='290' cy='40' r='2.5' fill='#e9d5ff' style='--d:1.4s'/><circle class='sp' cx='275' cy='150' r='3' fill='#fff' style='--d:1.8s'/><circle class='sp' cx='45' cy='150' r='2' fill='#c4b5fd' style='--d:.6s'/><circle class='sp' cx='140' cy='14' r='2.5' fill='#fff' style='--d:2.2s'/><circle r='4' fill='#fff' class='orb'><animateMotion dur='7s' repeatCount='indefinite' path='M10 90A150 58 0 1 1 310 90A150 58 0 1 1 10 90'/></circle></svg>`;return d}
 function coins(){[[140,{right:'7%',top:'15%'},0],[100,{left:'5%',bottom:'12%'},2],[62,{left:'13%',top:'30%'},4],[84,{right:'13%',bottom:'20%'},6]].forEach(([s,pos,dl])=>{const c=el('div','coin');c.style.width=c.style.height=s+'px';Object.assign(c.style,pos);c.style.animationDelay='-'+dl+'s';c.innerHTML=`<svg viewBox='0 0 24 24'><path d='M12 2l7 10-7 4-7-4zM12 22l-7-8 7 4 7-4z'/></svg>`;document.body.append(c)})}
 const accountApi={
-  user:null,online:false,enabled:false,applying:false,syncTimer:null,syncBusy:false,syncQueued:false,syncPromise:null,errorShown:false,storageSyncInstalled:false,firebaseMode:false,auth:null,firestore:null,
-  firebaseConfig(){
-    const config=window.JOURNAL_FIREBASE_CONFIG;
-    return config&&config.apiKey&&config.authDomain&&config.projectId&&config.appId&&
-      !Object.values(config).some(value=>typeof value==='string'&&value.startsWith('PASTE_'))?config:null
+  user:null,online:false,enabled:false,applying:false,syncTimer:null,syncBusy:false,syncQueued:false,syncPromise:null,errorShown:false,storageSyncInstalled:false,cloud:false,sb:null,rev:0,base:null,access:null,readOnly:false,readOnlyShown:false,
+  READ_ONLY:'Доступ закончился: журнал открыт только для просмотра и экспорта',
+  supabaseConfig(){
+    const config=window.JOURNAL_SUPABASE_CONFIG;
+    return config&&typeof config.url==='string'&&/^https:\/\//.test(config.url)&&typeof config.key==='string'&&config.key.length>20&&!config.key.startsWith('PASTE_')?config:null
   },
-  initializeFirebase(){
-    const config=this.firebaseConfig();
+  initializeSupabase(){
+    const config=this.supabaseConfig();
     if(!config)return false;
-    if(typeof firebase==='undefined')throw new Error('Не удалось загрузить Firebase. Проверь подключение к интернету и обнови страницу.');
-    if(!firebase.apps.length)firebase.initializeApp(config);
-    this.auth=firebase.auth();this.firestore=firebase.firestore();this.firebaseMode=true;
+    if(this.sb)return true;
+    if(typeof supabase==='undefined'||!supabase.createClient)throw new Error('Не удалось загрузить модуль аккаунтов. Проверь подключение к интернету и обнови страницу.');
+    this.sb=supabase.createClient(config.url,config.key,{auth:{flowType:'pkce',storageKey:'sb-journal-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    this.cloud=true;
     return true
+  },
+  // Keys that belong to this device, not to the journal: the sign-in session
+  // ("sb-…") and "jowner", the account whose journal copy is stored here.
+  // They are never synced, exported or wiped together with the journal data.
+  isAuthKey(key){return typeof key==='string'&&(key.startsWith('sb-')||key==='jowner')},
+  describe(error){
+    const message=String(error&&error.message||error||'');
+    if(/subscription_required/.test(message))return this.READ_ONLY;
+    if(/Failed to fetch|NetworkError|Load failed/i.test(message))return 'Нет связи с сервером аккаунтов';
+    return message||'Неизвестная ошибка'
   },
   async request(path,options={}){
     let response;
     try{response=await fetch(path,{credentials:'same-origin',...options,headers:{...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})}})}
-    catch(error){throw new Error(location.hostname.endsWith('github.io')?'Вход ещё не настроен: добавь параметры Firebase в firebase-config.js и включи Email/Password.':'Сервер аккаунтов недоступен. Запусти server.rb или настрой Firebase.')}
+    catch(error){throw new Error('Сервер аккаунтов недоступен.')}
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'Ошибка сервера ('+response.status+')');
     return data
   },
   snapshot(){
     const state={};
-    for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key!==null&&key!=='jdirty')state[key]=localStorage.getItem(key)}
+    for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key!==null&&key!=='jdirty'&&!this.isAuthKey(key))state[key]=localStorage.getItem(key)}
     return state
   },
   restore(state){
     this.applying=true;
-    try{localStorage.clear();Object.entries(state||{}).forEach(([key,value])=>localStorage.setItem(key,String(value)));
+    try{
+      const stale=[];for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key!==null&&!this.isAuthKey(key))stale.push(key)}
+      stale.forEach(key=>localStorage.removeItem(key));
+      Object.entries(state||{}).forEach(([key,value])=>{if(!this.isAuthKey(key))localStorage.setItem(key,String(value))});
       const trades=JSON.parse(localStorage.getItem('jt')||'[]'),plans=JSON.parse(localStorage.getItem('jp')||'[]');if(!Array.isArray(trades)||!Array.isArray(plans))throw new Error('В аккаунте сохранены некорректные данные журнала');
       T=trades;P=plans;ready=true;const saved=JSON.parse(localStorage.getItem('jcfg')||'null');if(saved&&saved.accts)CFG=saved;applyLook()
     }finally{this.applying=false}
   },
-  async readFirebaseState(uid){
-    const collection=this.firestore.collection('users').doc(uid).collection('journal'),meta=await collection.doc('meta').get();
-    if(!meta.exists)return null;
-    const count=meta.data().chunkCount;
-    if(!Number.isInteger(count)||count<0||count>36)throw new Error('Некорректный формат данных аккаунта');
-    const chunks=await Promise.all(Array.from({length:count},(_,index)=>collection.doc('chunk_'+index).get()));
-    if(chunks.some(chunk=>!chunk.exists||typeof chunk.data().value!=='string'))throw new Error('Не удалось прочитать все части истории аккаунта');
-    const state=JSON.parse(chunks.map(chunk=>chunk.data().value).join(''));
-    if(!state||typeof state!=='object'||Array.isArray(state))throw new Error('Некорректный формат истории аккаунта');
-    return state
+  // Three-way merge of two copies of the journal (this device and the cloud).
+  // base is the last state both sides agreed on, or null when it is unknown.
+  // Nothing that either side changed is dropped; on a true clash this device wins.
+  mergeState(base,local,remote){
+    const out={};
+    for(const key of new Set([...Object.keys(local),...Object.keys(remote)])){
+      if(this.isAuthKey(key)||key==='jdirty')continue;
+      const l=local[key],r=remote[key],b=base?base[key]:undefined;let value;
+      if(l===r)value=l;
+      else if(base&&l===b)value=r;
+      else if(base&&r===b)value=l;
+      else if((key==='jt'||key==='jp')&&l!==undefined&&r!==undefined)value=this.mergeList(b,l,r);
+      else value=l!==undefined?l:r;
+      if(value!==undefined)out[key]=value
+    }
+    return out
+  },
+  mergeList(baseText,localText,remoteText){
+    try{
+      const parse=text=>{const list=text===undefined?[]:JSON.parse(text);if(!Array.isArray(list))throw new Error('not a list');return list};
+      const index=list=>{if(list.some(item=>!item||item.id==null))throw new Error('record without id');return new Map(list.map(item=>[String(item.id),JSON.stringify(item)]))};
+      const local=parse(localText),remote=parse(remoteText),known=baseText!==undefined,L=index(local),R=index(remote),B=known?index(parse(baseText)):null,out=[];
+      for(const id of new Set([...local,...remote].map(item=>String(item.id)))){
+        const l=L.get(id),r=R.get(id),b=known?B.get(id):undefined;let pick;
+        if(l===r)pick=l;
+        else if(known&&l===b)pick=r;
+        else if(known&&r===b)pick=l;
+        else pick=l!==undefined?l:r;
+        if(pick!==undefined)out.push(JSON.parse(pick))
+      }
+      return JSON.stringify(out)
+    }catch(error){return localText}
+  },
+  async readRemote(){
+    const {data,error}=await this.sb.from('journal_state').select('state,rev').eq('user_id',this.user.uid).maybeSingle();
+    if(error)throw new Error(this.describe(error));
+    if(!data)return null;
+    if(!data.state||typeof data.state!=='object'||Array.isArray(data.state))throw new Error('Некорректный формат истории аккаунта');
+    return {state:data.state,rev:Number(data.rev)||0}
+  },
+  async readAccess(){
+    const {data,error}=await this.sb.rpc('my_access');
+    if(error)throw new Error(this.describe(error));
+    return data&&typeof data.status==='string'?data:{status:'expired',until:null}
+  },
+  accessText(){
+    const access=this.access;if(!access)return '';
+    const until=access.until?new Date(access.until).toLocaleDateString('ru-RU'):'';
+    return access.status==='admin'?'Статус: админ, без срока':access.status==='trial'?'Пробный период до '+until:access.status==='active'?'Подписка до '+until:'Доступ закончился: только просмотр и экспорт'
+  },
+  setReadOnly(){
+    this.readOnly=true;this.enabled=false;clearTimeout(this.syncTimer);this.syncTimer=null;this.access={status:'expired',until:this.access&&this.access.until||null};
+    if(this._rawRemove)this._rawRemove.call(localStorage,'jdirty');
+    if(!this.readOnlyShown){this.readOnlyShown=true;toast(this.READ_ONLY)}
   },
   async writeState(state){
-    if(!this.firebaseMode)return this.request('/api/state',{method:'PUT',body:JSON.stringify({state})});
-    const serialized=JSON.stringify(state);
-    if(new Blob([serialized]).size>5*1024*1024)throw new Error('Данные аккаунта превышают лимит 5 МБ');
-    const collection=this.firestore.collection('users').doc(this.user.uid).collection('journal'),metaRef=collection.doc('meta'),oldMeta=await metaRef.get(),oldCount=oldMeta.exists?oldMeta.data().chunkCount:0;
-    if(!Number.isInteger(oldCount)||oldCount<0||oldCount>36)throw new Error('Некорректный формат данных аккаунта');
-    const pieces=serialized.match(/[\s\S]{1,150000}/g)||[''],batch=this.firestore.batch();
-    pieces.forEach((value,index)=>batch.set(collection.doc('chunk_'+index),{value}));
-    for(let index=pieces.length;index<oldCount;index++)batch.delete(collection.doc('chunk_'+index));
-    batch.set(metaRef,{chunkCount:pieces.length,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
-    await batch.commit()
+    if(!this.cloud)return this.request('/api/state',{method:'PUT',body:JSON.stringify({state})});
+    if(this.readOnly)throw new Error(this.READ_ONLY);
+    let next=state;
+    for(let attempt=0;attempt<3;attempt++){
+      if(new Blob([JSON.stringify(next)]).size>5*1024*1024)throw new Error('Данные аккаунта превышают лимит 5 МБ');
+      const {data,error}=await this.sb.rpc('save_state',{expected_rev:this.rev,new_state:next});
+      if(!error){this.rev=Number(data)||this.rev+1;this.base=next;return}
+      if(error.code==='42501'||/subscription_required/.test(error.message||'')){this.setReadOnly();throw new Error(this.READ_ONLY)}
+      if(error.code!=='40001'&&!/rev_conflict/.test(error.message||''))throw new Error(this.describe(error));
+      // Another device saved first: reread, merge with what is on this device now, try again.
+      const remote=await this.readRemote();
+      if(!remote){this.rev=0;continue}
+      next=this.mergeState(this.base,this.snapshot(),remote.state);this.rev=remote.rev;this.base=remote.state;
+      this.restore(next);render()
+    }
+    throw new Error('Не удалось объединить изменения с другим устройством. Обнови страницу и попробуй ещё раз.')
+  },
+  oauthFailure(){
+    const params=new URLSearchParams(location.search.slice(1)+'&'+location.hash.slice(1)),text=params.get('error_description')||params.get('error');
+    if(!text)return '';
+    try{history.replaceState(null,'',location.pathname)}catch(error){}
+    return String(text).replace(/\+/g,' ').slice(0,200)
+  },
+  async begin(user){
+    this.user={uid:user.id,email:user.email||''};
+    // A journal left here by a different account must not leak into this one.
+    const owner=localStorage.getItem('jowner');if(owner!==null&&owner!==user.id)this.restore({});
+    if(this._rawSet)this._rawSet.call(localStorage,'jowner',user.id);
+    const [remote,access]=await Promise.all([this.readRemote(),this.readAccess()]);
+    this.access=access;this.readOnly=access.status==='expired';this.rev=remote?remote.rev:0;this.base=remote?remote.state:null;
+    const local=this.snapshot(),hasLocal=Object.keys(local).length>0,hasRemote=!!remote&&Object.keys(remote.state).length>0,dirty=localStorage.getItem('jdirty')===this.user.uid;
+    if(hasRemote&&!(dirty&&hasLocal))this.restore(remote.state);
+    else if(hasRemote){const merged=this.mergeState(null,local,remote.state);this.restore(merged);if(!this.readOnly)await this.writeState(merged)}
+    else if(hasLocal&&!this.readOnly)await this.writeState(local);
+    if(this._rawRemove)this._rawRemove.call(localStorage,'jdirty');
+    this.enabled=!this.readOnly;
+    if(this.readOnly&&!this.readOnlyShown){this.readOnlyShown=true;toast(this.READ_ONLY)}
   },
   async init(){
-    if(this.firebaseConfig()){
+    if(this.supabaseConfig()){
       try{
-        this.initializeFirebase();this.online=true;
-        const user=await new Promise((resolve,reject)=>{let unsubscribe=null,settled=false;const finish=(callback,value)=>{if(settled)return;settled=true;if(unsubscribe)unsubscribe();callback(value)};unsubscribe=this.auth.onAuthStateChanged(value=>finish(resolve,value),error=>finish(reject,error))});
-        if(!user)return false;
-        this.user={uid:user.uid,email:user.email};const state=await this.readFirebaseState(user.uid);
-        const dirty=localStorage.getItem('jdirty')===user.uid;if(state!==null&&!dirty)this.restore(state);else if(Object.keys(this.snapshot()).length){await this.writeState(this.snapshot());if(dirty&&this._rawRemove)this._rawRemove.call(localStorage,'jdirty')}
-        this.enabled=true;return true
-      }catch(error){this.online=false;console.warn('Firebase session could not be restored:',error.message);toast('Не удалось подключиться к Firebase: '+error.message);return false}
+        const failure=this.oauthFailure();
+        this.initializeSupabase();this.online=true;
+        const {data,error}=await this.sb.auth.getSession();
+        if(error)throw error;
+        if(failure)toast('Вход не выполнен: '+failure);
+        if(!data||!data.session)return false;
+        await this.begin(data.session.user);
+        return true
+      }catch(error){
+        console.warn('Account session could not be restored:',error&&error.message);
+        if(this.user){this.enabled=!this.readOnly;toast('Не удалось синхронизировать аккаунт: '+this.describe(error)+'. Изменения останутся на этом устройстве и отправятся позже');return true}
+        this.online=false;toast('Не удалось подключиться к аккаунту: '+this.describe(error));return false
+      }
     }
     let data;
     try{data=await this.request('/api/session')}
@@ -472,8 +563,8 @@ const accountApi={
   installStorageSync(){
     if(this.storageSyncInstalled)return;this.storageSyncInstalled=true;
     const set=Storage.prototype.setItem,remove=Storage.prototype.removeItem,clear=Storage.prototype.clear,self=this;this._rawSet=set;this._rawRemove=remove;
-    Storage.prototype.setItem=function(key,value){const result=set.call(this,key,value);if(this===localStorage)self.schedule();return result};
-    Storage.prototype.removeItem=function(key){const result=remove.call(this,key);if(this===localStorage)self.schedule();return result};
+    Storage.prototype.setItem=function(key,value){const result=set.call(this,key,value);if(this===localStorage&&!self.isAuthKey(key))self.schedule();return result};
+    Storage.prototype.removeItem=function(key){const result=remove.call(this,key);if(this===localStorage&&!self.isAuthKey(key))self.schedule();return result};
     Storage.prototype.clear=function(){const result=clear.call(this);if(this===localStorage)self.schedule();return result}
   },
   schedule(){
@@ -486,7 +577,7 @@ const accountApi={
     if(this.syncBusy){this.syncQueued=true;return this.syncPromise}
     this.syncBusy=true;
     this.syncPromise=(async()=>{try{const v0=this._ver||0;await this.writeState(this.snapshot());this.errorShown=false;if((this._ver||0)===v0&&this._rawRemove)this._rawRemove.call(localStorage,'jdirty')}
-      catch(error){if(!this.errorShown){toast('Не удалось синхронизировать аккаунт: '+error.message);this.errorShown=true}throw error}
+      catch(error){if(!this.errorShown&&!this.readOnly){toast('Не удалось синхронизировать аккаунт: '+error.message);this.errorShown=true}throw error}
       finally{this.syncBusy=false;this.syncPromise=null;if(this.syncQueued){this.syncQueued=false;this.schedule()}}})();
     return this.syncPromise
   },
@@ -506,7 +597,7 @@ const accountApi={
     button.onclick=()=>this.openProfile();nav.append(button)
   },
   async accept(data,registering,close){
-    this.user=this.firebaseMode?{uid:data.uid,email:data.email}:{email:data.email};
+    this.user={email:data.email};
     try{
       if(data.state!==null&&data.state!==undefined)this.restore(data.state);
       else await this.writeState(this.snapshot())
@@ -515,9 +606,21 @@ const accountApi={
     const start=document.querySelector('.start');if(start){start.classList.add('out');document.body.classList.remove('pre');setTimeout(()=>start.remove(),900)}
     render();toast(registering?'Аккаунт создан ✓':'Вход выполнен ✓')
   },
+  async signInWithGoogle(){
+    this.initializeSupabase();
+    const {error}=await this.sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname,queryParams:{prompt:'select_account'}}});
+    if(error)throw new Error(this.describe(error))
+  },
   openAuth(mode='register'){
     modal((m,close)=>{
       m.closest('.ov').classList.add('auth-modal');
+      if(this.supabaseConfig()){
+        const box=el('div','account-form'),error=el('div','account-error'),google=el('button','p','Войти через Google');google.type='button';
+        google.onclick=async()=>{error.textContent='';google.disabled=true;try{await this.signInWithGoogle()}catch(failure){error.textContent=failure.message;google.disabled=false}};
+        box.append(error,google);
+        m.append(el('h3',null,'Вход в Journal'),box,el('div','mu','Первый вход открывает пробный период на 14 дней, карта не нужна. Данные журнала синхронизируются с аккаунтом.'));
+        return
+      }
       let registering=mode==='register';
       const draw=()=>{
         m.replaceChildren();m.append(el('h3',null,registering?'Создать аккаунт':'Войти в Journal'));
@@ -532,7 +635,7 @@ const accountApi={
           event.preventDefault();error.textContent='';
           if(registering&&password.value!==confirm.value){error.textContent='Пароли не совпадают';return}
           submit.disabled=true;
-          try{let data;if(this.firebaseConfig()){this.initializeFirebase();const credential=registering?await this.auth.createUserWithEmailAndPassword(email.value.trim(),password.value):await this.auth.signInWithEmailAndPassword(email.value.trim(),password.value);data={uid:credential.user.uid,email:credential.user.email,state:registering?null:await this.readFirebaseState(credential.user.uid)}}else data=await this.request(registering?'/api/register':'/api/login',{method:'POST',body:JSON.stringify({email:email.value,password:password.value})});await this.accept(data,registering,close)}
+          try{const data=await this.request(registering?'/api/register':'/api/login',{method:'POST',body:JSON.stringify({email:email.value,password:password.value})});await this.accept(data,registering,close)}
           catch(failure){error.textContent=failure.message}
           finally{submit.disabled=false}
         };
@@ -546,9 +649,10 @@ const accountApi={
     modal((m,close)=>{
       m.closest('.ov').classList.add('auth-modal');
       m.append(el('h3',null,'Аккаунт'),el('div','mu',this.user.email));
+      const status=this.accessText();if(status)m.append(el('div','mu',status));
       const logout=el('button','s','Выйти из аккаунта');logout.onclick=async()=>{
         logout.disabled=true;
-        try{clearTimeout(this.syncTimer);if(this.enabled)await this.sync();if(this.firebaseMode)await this.auth.signOut();else await this.request('/api/logout',{method:'POST',body:'{}'});this.enabled=false;this.user=null;this.applying=true;localStorage.clear();this.applying=false;T=[];P=[];CFG={accts:[{id:'fp',name:'FundingPips',bal:25000,dd:10,dl:5,tg:8},{id:'iq',name:'IQcapital',bal:50000,dd:10,dl:5,tg:8}]};applyLook();close();render();document.body.classList.add('pre');intro()}
+        try{clearTimeout(this.syncTimer);if(this.enabled)await this.sync();if(this.cloud){const {error}=await this.sb.auth.signOut({scope:'local'});if(error)console.warn('Sign-out request failed:',error.message)}else await this.request('/api/logout',{method:'POST',body:'{}'});this.enabled=false;this.user=null;this.rev=0;this.base=null;this.access=null;this.readOnly=false;this.readOnlyShown=false;this.applying=true;localStorage.clear();this.applying=false;T=[];P=[];CFG={accts:[{id:'fp',name:'FundingPips',bal:25000,dd:10,dl:5,tg:8},{id:'iq',name:'IQcapital',bal:50000,dd:10,dl:5,tg:8}]};applyLook();close();render();document.body.classList.add('pre');intro()}
         catch(error){logout.disabled=false;toast('Не удалось выйти: '+error.message)}
       };m.append(logout)
     })

@@ -14,23 +14,25 @@ account endpoints, and persistent account data from the same origin.
 
 ## Accounts and data
 
-- The legacy Ruby backend uses PBKDF2-HMAC-SHA256 password hashes and random,
-  HttpOnly, SameSite sessions that expire after 30 days.
-- When `public/firebase-config.js` contains a Firebase project config, email and
-  password sign-in uses Firebase Authentication, and trades, plans, settings,
-  and other local-storage journal data sync to that user's Firestore account.
-  Without Firebase config, the local Ruby server provides the existing
-  email/password backend.
-- The default account store is the private `.data/accounts.pstore` file. Back it
-  up securely; do not put it in a public static directory or commit it.
-- Account sync is limited to 5 MB per account.
+- The published site uses [Supabase](https://supabase.com): sign-in with Google,
+  one row per user in `journal_state`, screenshots in the private `shots`
+  bucket. Setup, rollback and what is safe to publish:
+  [deploy/supabase.md](./deploy/supabase.md).
+- `public/supabase-config.js` holds only the project URL and the publishable
+  key. Both are public by design; access is enforced in the database (row level
+  security and functions). Never put any other key in this repository.
+- Every new account gets a 14-day trial. After the trial or subscription ends
+  the journal is view and export only; nothing is deleted.
+- Account sync is limited to 5 MB per account. Two devices cannot silently
+  overwrite each other: a stale save is merged by trade and plan id.
 - Media stored in browser IndexedDB (such as intro videos and custom video
   backgrounds) stays on that browser and is not included in account sync.
-
-For a free static hosting setup with GitHub Pages and Firebase, see
-[deploy/github-pages-firebase.md](./deploy/github-pages-firebase.md). For
-server-based hosting, the Ruby backend is still available; see
-[deploy/oracle-cloud.md](./deploy/oracle-cloud.md).
+- Without `supabase-config.js` the app falls back to the legacy local Ruby
+  server (`ruby server.rb`, email and password, data in `.data/`). See
+  [deploy/oracle-cloud.md](./deploy/oracle-cloud.md).
+- `public/firebase-config.js`, `firestore.rules` and
+  `deploy/github-pages-firebase.md` are kept only until the old Firebase data
+  is migrated; the page no longer loads Firebase.
 
 ## Structure
 
@@ -43,15 +45,18 @@ server-based hosting, the Ruby backend is still available; see
   the accuracy scoreboard (format: `public/briefing/README.md`). The repository
   is public, so never put personal data, trades, or third-party paid material
   there.
+- `public/vendor/supabase.js` is the unmodified browser build of
+  `@supabase/supabase-js` (version and checksum in `deploy/supabase.md`).
+- `tests/sync_smoke.py` checks sign-in, sync, merge, read-only mode and
+  screenshots in headless Chrome with a fake backend: `python3 tests/sync_smoke.py`.
 
 ## Screenshots
 
 Screenshots are no longer stored inside the 5 MB synced state. They live in the
-browser's IndexedDB and, when you are signed in, as separate Firestore
-documents `users/{uid}/journal/shot_{id}` (covered by the existing rules).
-Older screenshots stored inline are migrated automatically on load. Each
-screenshot is compressed to at most about 550 KB (Firestore documents are
-limited to 1 MiB). Backups include screenshots.
+browser's IndexedDB and, when you are signed in, as files `<user id>/<shot id>`
+in the private Supabase Storage bucket `shots` (2 MB limit per file). Older
+screenshots stored inline are migrated automatically on load. Each screenshot
+is compressed to at most about 550 KB. Backups include screenshots.
 
 ## Animations
 
