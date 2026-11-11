@@ -341,3 +341,35 @@ body.mo-off .ch3{animation:none!important}
 body.mo-off .so-drawer{animation:none}
 .quick-actions .float.chat{position:relative}.quick-actions .float.chat svg{width:20px;height:20px}.quick-actions .float.chat .dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--tx);box-shadow:0 0 0 2px var(--bg)}
 @media (max-width:560px){.so-socials{grid-template-columns:1fr}.so-drawer{top:auto;height:70vh;left:12px;right:12px;width:auto}}
+
+/* ==== 3D world (app/world.js): stations, camera flight, dockable tab bar ==== */
+body.paper{--wink:10,10,11}
+body.night{--wink:214,213,208}
+#sky{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
+#sky[hidden],body.perf #sky,body.custom-background-active #sky{display:none}
+#v{transition:none}
+#v.flying{pointer-events:none;will-change:transform,opacity;backface-visibility:hidden}
+/* tab bar: one solid panel, no glass; the grip docks it to any edge */
+.nav{background:var(--pn);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 1px 0 rgba(var(--wink),.04),0 18px 40px -22px rgba(0,0,0,.55)}
+body.paper .nav{box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 16px 36px -24px rgba(10,10,11,.38)}
+.dock-grip{flex:0 0 auto;display:grid;place-items:center;width:22px;min-width:22px;height:44px;padding:0;margin:0;border:0;border-radius:9px;background:transparent;color:var(--mu);cursor:grab;touch-action:none;box-shadow:none}
+.dock-grip svg{width:10px;height:15px}
+.dock-grip:hover{color:var(--tx);background:rgba(var(--wink),.06)}
+.dock-grip:focus-visible{outline:2px solid var(--tx);outline-offset:2px}
+body[data-nav-position="left"] .dock-grip,body[data-nav-position="right"] .dock-grip{width:44px;height:22px}
+body[data-nav-position="left"] .dock-grip svg,body[data-nav-position="right"] .dock-grip svg{transform:rotate(90deg)}
+body.dock-drag,body.dock-drag *{cursor:grabbing!important;user-select:none}
+body.dock-drag .nav{transform:none!important;transition:none;opacity:.92}
+.nav{position:fixed}
+.dock-cam{position:absolute;left:0;top:0;width:52px;height:52px;margin:-26px 0 0 -26px;border:1px solid rgba(var(--wink),.55);border-radius:50%;pointer-events:none;z-index:0}
+.dock-cam::after{content:"";position:absolute;left:50%;top:-3px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:rgb(var(--wink))}
+@media(max-width:760px){.dock-cam{width:46px;height:46px;margin:-23px 0 0 -23px}.dock-grip{height:40px}}
+.nav .big{position:relative;z-index:1}
+.dock-zones{position:fixed;inset:0;z-index:19;pointer-events:none}
+.dock-zones i{position:absolute;background:rgba(var(--wink),.07);border:1px dashed rgba(var(--wink),.35);border-radius:16px;opacity:.45;transition:opacity .18s ease}
+.dock-zones i.on{opacity:1;background:rgba(var(--wink),.12)}
+.dock-zones i[data-e=top]{left:22%;right:22%;top:8px;height:64px}
+.dock-zones i[data-e=bottom]{left:22%;right:22%;bottom:8px;height:64px}
+.dock-zones i[data-e=left]{top:22%;bottom:22%;left:8px;width:64px}
+.dock-zones i[data-e=right]{top:22%;bottom:22%;right:8px;width:64px}
+@media (prefers-reduced-motion:reduce){.dock-zones i{transition:none}}
