@@ -231,7 +231,8 @@ button.p:hover,button.s:hover{transform:none!important}
 @keyframes idHaloIn{from{opacity:0;transform:scale(.9)}to{opacity:.5;transform:scale(1)}}
 @keyframes idFloat{50%{transform:translateY(-5px)}}
 @media(prefers-reduced-motion:reduce){.id-logo,.id-logo *{animation:none!important;opacity:1!important;filter:none!important;transform:none!important;stroke-dashoffset:0!important}}
-</style></head><body class='pre'><main>
+</style><link rel="stylesheet" href="briefing.css">
+</head><body class='pre'><main>
 <h1 id="ttl">Journal by myIDgod</h1>
 <div class="nav" id="nav"></div>
 <div id="v"></div>
@@ -846,4 +847,5 @@ const originalRender=render;render=function(){originalRender();accountApi.update
 coins();iconify(document.body);
 document.body.classList.add('first');setTimeout(()=>document.body.classList.remove('first'),1700);
 applyLook();render();(async()=>{await accountApi.init();await store.init();migrateShots();if(db){try{const s=await db.collection('settings').doc('cfg').get();if(s.exists&&s.data().accts){CFG=s.data();applyLook();render()}}catch(e){console.warn('Could not load journal settings:',e)}}mget('custom-background').then(setCustomBackground);if(accountApi.user){document.querySelectorAll('.intro video').forEach(video=>{video.pause();if(video.src.startsWith('blob:'))URL.revokeObjectURL(video.src)});document.querySelectorAll('.intro,.start').forEach(overlay=>overlay.remove());document.body.classList.remove('pre');render()}else intro()})();
-</script></body></html>
+</script><script src="briefing.js" defer></script>
+</body></html>
