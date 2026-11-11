@@ -252,7 +252,6 @@ body.paper :focus-visible{outline:2px solid #0A0A0B;outline-offset:2px}
 /* ---- Motion setting: light keeps short transitions only; off removes all motion ---- */
 body.mo-light:not(.paper){animation:none}
 body.mo-light *,body.mo-light *::before,body.mo-light *::after{animation-iteration-count:1!important}
-body.mo-light .intro video{display:none}
 body.mo-off *,body.mo-off *::before,body.mo-off *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 body.mo-off .dl{stroke-dashoffset:0!important}
 /* ---- profile and clans (social.js) ---- */
@@ -282,3 +281,5 @@ body.mo-off .dl{stroke-dashoffset:0!important}
 @media (max-width:560px){.so-me{flex-direction:column;align-items:flex-start}.so-link{grid-template-columns:1fr auto}.so-link input:first-child{grid-column:1/-1}.so-acts{margin-left:0}}
 
 .intro .snd.tap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:1.05rem;padding:16px 28px;animation:pop .6s var(--spring)}
+.guide-open .quick-actions,body:has(.guide) .quick-actions{z-index:36}
+.quick-actions .float.on{outline:2px solid currentColor;outline-offset:2px}

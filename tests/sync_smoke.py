@@ -50,7 +50,7 @@ def main():
                     r.continue_()
                 else:
                     r.abort()
-            page.route('**/*', route)
+            context.route('**/*', route)
             page.on('pageerror', lambda e: errors.append(str(e)))
             return page
 
@@ -271,6 +271,34 @@ def main():
         check('foreign journal: not uploaded to the new account', db(page) is None or db(page)['row'] is None, db(page))
         check('foreign journal: removed from the screen', page.evaluate('T.length') == 0)
         check('owner mark stays out of sync and export', 'jowner' not in page.evaluate('accountApi.snapshot()'))
+        page.context.close()
+
+
+        # 12. intro on a fresh tab, skip opens the journal, no intro on reload; toggle buttons
+        page = new_page(errors)
+        boot(page, signed_in=False)
+        page.evaluate("localStorage.setItem('sb-journal-auth',JSON.stringify({user:{id:'uid-1',email:'tester@example.com'}}))")
+        tab = page.context.new_page()
+        tab.on('pageerror', lambda e: errors.append(str(e)))
+        tab.goto(base)
+        tab.wait_for_selector('.intro .skip', timeout=10000)
+        check('intro: shown on a fresh tab for a signed-in user', tab.evaluate("document.body.classList.contains('pre')"))
+        tab.locator('.intro .skip').click()
+        tab.wait_for_function("!document.body.classList.contains('pre')", timeout=5000)
+        check('intro: skip opens the journal (no start menu)', tab.locator('.start').count() == 0)
+        tab.reload(); tab.wait_for_function('ready===true&&accountApi.enabled', timeout=10000); tab.wait_for_timeout(600)
+        check('intro: not shown again on reload', tab.locator('.intro').count() == 0 and not tab.evaluate("document.body.classList.contains('pre')"))
+        check('intro: video visible in light motion mode', tab.evaluate("""(()=>{document.body.classList.add('mo-light');const o=el('div','intro'),v=el('video','ivid');o.append(v);document.body.append(o);const d=getComputedStyle(v).display;o.remove();return d!=='none'})()"""))
+        look = tab.locator('.quick-actions button.float:not(.h)')
+        look.click(); tab.wait_for_timeout(200)
+        opened = tab.locator('.ov.look-ov').count()
+        look.click(); tab.wait_for_timeout(200)
+        check('appearance button opens and closes the panel', opened == 1 and tab.locator('.ov').count() == 0, opened)
+        helpb = tab.locator('.quick-actions button.float.h')
+        helpb.click(); tab.wait_for_timeout(200)
+        opened = tab.locator('.guide').count()
+        helpb.click(); tab.wait_for_timeout(200)
+        check('help button opens and closes the guide', opened == 1 and tab.locator('.guide').count() == 0, opened)
         page.context.close()
 
         check('no uncaught page errors', not errors, errors)
