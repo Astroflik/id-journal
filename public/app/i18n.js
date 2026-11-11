@@ -16,6 +16,9 @@
     'dock.label':['Разделы журнала','Journal sections'],
     'dock.grip':['Переместить панель: перетащи к любому краю или нажми стрелку','Move the bar: drag it to any edge or press an arrow key'],
     'dock.moved':['Панель закреплена: ','Bar docked: '],
+    'look.title':['Оформление','Appearance'],'look.theme':['Тема','Theme'],'look.theme.night':['Чёрная','Black'],'look.theme.paper':['Белая','White'],
+    'look.perf':['Режим производительности','Performance mode'],'look.perf.auto':['Авто (рекомендуется)','Auto (recommended)'],'look.perf.on':['Включён: без фона и эффектов','On: no background or effects'],'look.perf.off':['Выключен: все эффекты','Off: all effects'],
+    'perf.auto.on':['Включён режим производительности: слабое устройство','Performance mode is on: weak device'],
     'dock.top':['сверху','top'],'dock.bottom':['снизу','bottom'],'dock.left':['слева','left'],'dock.right':['справа','right']
   };
   var lang='ru',subs=[];

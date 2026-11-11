@@ -357,6 +357,16 @@ def main():
         mt.click(); tab.wait_for_timeout(300)
         on = tab.evaluate("[motion(),Fly.on]")
         check('motion button turns animations off and back on (off = no flight)', off == ['off', False, 'false', ['plan', False, '']] and on == ['light', False], [off, on])
+        pf = []
+        for m in ('on', 'off'):
+            tab.evaluate("m=>{CFG.look=Object.assign({},CFG.look||{},{perf:m,motion:'full'});applyLook();render()}", m); tab.wait_for_timeout(150)
+            pf.append(tab.evaluate("[document.body.classList.contains('perf'),document.querySelector('#sky').hidden,(()=>{const t=document.querySelector('#v .tiles>.tile');return t?getComputedStyle(t).animationName:'-'})()]"))
+        tab.evaluate("CFG.look=Object.assign({},CFG.look||{},{perf:'auto',motion:'light'});applyLook()")
+        check('performance mode: on = no canvas and no breathing, off = everything', pf[0][:2] == [True, True] and pf[0][2] in ('none', '-') and pf[1][:2] == [False, False], pf)
+        tab.evaluate("lookForm2()"); tab.wait_for_selector('.ov.look-ov', timeout=3000)
+        check('appearance form offers exactly two themes and a performance setting', tab.evaluate("(()=>{const s=[...document.querySelectorAll('.ov.look-ov select')];const th=s.find(x=>[...x.options].some(o=>o.value==='paper'));return !!th&&th.options.length===2&&s.some(x=>[...x.options].some(o=>o.value==='auto'))})()"))
+        tab.evaluate("document.querySelector('.ov.look-ov').remove()")
+        check('any style but white migrates to black, always', tab.evaluate("(()=>{const s=JSON.stringify(CFG.look);const r=['tb','classic','mono','x'].map(v=>{CFG.look={style:v,v2:1};applyLook();return LOOK.style});CFG.look=JSON.parse(s);applyLook();return r.every(x=>x==='night')})()"))
         check('any old look moves to night once', tab.evaluate("(()=>{const s=JSON.stringify(CFG.look);CFG.look={style:'mono'};applyLook();const a=LOOK.style;CFG.look.style='paper';applyLook();const b=LOOK.style;CFG.look=JSON.parse(s);applyLook();return a==='night'&&b==='paper'})()"))
         page.context.close()
 

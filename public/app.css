@@ -397,3 +397,10 @@ body.brief-open .quick-actions{z-index:42}
 body:not(.mo-light):not(.mo-off) #v .tiles>.tile{animation:breathe 7.5s ease-in-out infinite;animation-delay:calc(var(--i,0)*-1.9s)}
 #v.flying>*,#v.flying .tiles>.tile{animation:none}
 @keyframes draw{to{stroke-dashoffset:0}}
+
+/* ---- phase 4: performance mode (body.perf): no canvas background (World.quality 0), no breathing, no glows, no glass blur ---- */
+body.perf #v .tiles>.tile{animation:none}
+body.perf .dl{filter:none}
+body.perf *,body.perf *::before,body.perf *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.perf .quick-actions .float,body.perf .nav{box-shadow:none}
+
