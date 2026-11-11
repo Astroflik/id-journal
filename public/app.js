@@ -833,6 +833,13 @@ const STATIONS={home:{x:0,y:0,z:0,ry:0},plan:{x:900,y:-120,z:-2300,ry:.32},stats
     if(!nav.querySelector('.dock-grip')){const g=el('button','dock-grip');g.type='button';g.title=T('dock.grip');g.setAttribute('aria-label',T('dock.grip'));g.innerHTML='<svg viewBox="0 0 12 18" aria-hidden="true"><g fill="currentColor"><circle cx="3" cy="3" r="1.4"/><circle cx="9" cy="3" r="1.4"/><circle cx="3" cy="9" r="1.4"/><circle cx="9" cy="9" r="1.4"/><circle cx="3" cy="15" r="1.4"/><circle cx="9" cy="15" r="1.4"/></g></svg>';nav.prepend(g)}
     if(!nav.querySelector('.dock-cam')){const m=el('span','dock-cam');m.setAttribute('aria-hidden','true');m.hidden=true;nav.append(m)}
     if(!World.flying())requestAnimationFrame(()=>mark(view,view,1))};
+  /* arrival: the first time a tab is shown at rest (journal opened, intro finished) its widgets come forward one by one.
+     A tab reached by a flight needs none: the camera and the widget depth already bring it in. */
+  let inView=null,inT=0;const renderIn=render;render=function(){renderIn();const v=$('#v');if(!v)return;
+    [...v.children].forEach((c,i)=>c.style.setProperty('--wi',Math.min(i,10)));
+    if(!ready||document.body.classList.contains('pre')||inView===view)return;inView=view;
+    if(World.flying()||motion()==='off')return;
+    v.classList.remove('v-in');void v.offsetWidth;v.classList.add('v-in');clearTimeout(inT);inT=setTimeout(()=>v.classList.remove('v-in'),1700)};
   const lookW=applyLook;applyLook=function(){lookW();World.redraw()};
   if(window.I18N)I18N.on(()=>{render();World.redraw()});
 })();
