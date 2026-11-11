@@ -8,17 +8,19 @@
   "date": "2026-11-11",              // дата по Киеву, YYYY-MM-DD
   "updatedAt": "2026-11-11T13:50:00Z",
   "instrument": "NQ",
-  "bias": { "dir": "long|short|neutral", "confidence": "low|medium|high", "summary": "..." },
+  "bias": { "dir": "long|short|neutral", "confidence": "low|medium|high", "headline": "1–2 предложения: итог и главная причина", "summary": "полный контекст" },
   "recap": { "text": "разбор вчерашнего дня (если вчера не торговали)" },
   "why": [ { "title": "звено 1", "text": "причина" } ],
   "confirm": ["что подтвердит сценарий"],
   "invalidate": ["что его сломает"],
-  "calendar": [ { "time": "15:30", "event": "CPI", "forecast": "3.1%", "actual": "", "reaction": "" } ],
-  "options": { "summary": "", "levels": [ { "name": "Gamma flip", "price": "21000", "note": "" } ], "explain": "", "quality": "откуда данные и насколько им можно верить" },
+  "calendar": [ { "time": "15:30", "event": "CPI", "impact": "high|med", "forecast": "3.1%", "actual": "", "reaction": "" } ],
+  "options": { "index": "NDX", "asof": "время снимка", "source": "откуда", "quality_level": "low|medium|high", "spot": 27738, "spot_label": "подпись цены", "summary": "", "levels": [ { "name": "Gamma flip", "kind": "flip|call|put|net|other", "price": "21000", "note": "" } ], "explain": "", "quality": "откуда данные и можно ли им верить" },
   "earnings": [ { "company": "NVDA", "when": "после закрытия", "note": "" } ],
   "risks": ["..."],
   "weekly": { "text": "обзор недели (по воскресеньям)" },
-  "lesson": { "title": "Урок дня", "text": "..." }
+  "lesson": { "title": "Урок дня", "text": "..." },
+  "sources": [ { "name": "Trading Economics", "url": "https://...", "used": "что взято" } ],
+  "test": false                      // true = плашка «ПРОБНАЯ»
 }
 ```
 Если сводки нет: `{"date": null}`.
