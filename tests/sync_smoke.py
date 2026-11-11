@@ -163,6 +163,28 @@ def main():
         check('expired: banner gives the reason', page.locator('.acc-banner', has_text='уже использовала пробный период').count() == 1)
         page.evaluate('accountApi.openProfile()')
         check('expired: profile says so', page.locator('.auth-modal', has_text='Доступ закончился').count() == 1)
+        check('non-admin: no admin button', page.locator('.auth-modal button', has_text='Админ-панель').count() == 0)
+
+        # 8b. admin panel: list, signals, grant, two-step revoke, domains
+        d = db(page); d['access'] = {'status': 'admin', 'until': None}
+        d['users'] = [{'user_id': 'u2', 'email': 'b@x.com', 'has_access': True, 'trial_status': 'pending_review', 'trial_ends_at': None, 'paid_until': None, 'same_mailbox_accounts': 1, 'same_device_accounts': 0, 'last_sign_in_at': None, 'note': None}]
+        d['domains'] = [{'domain': 'mailinator.com', 'note': None}]
+        d['calls'] = []; set_db(page, d)
+        boot(page)
+        check('admin: no status banner', page.locator('.acc-banner').count() == 0)
+        page.evaluate('accountApi.openProfile()')
+        page.locator('.auth-modal button', has_text='Админ-панель').click()
+        page.wait_for_selector('.admin-md td', timeout=5000)
+        check('admin: user row with signals', page.locator('.admin-md tr', has_text='b@x.com').filter(has_text='тот же ящик: 1').count() == 1)
+        check('admin: blocked domain listed', page.locator('.admin-md', has_text='mailinator.com').count() == 1)
+        page.locator('.admin-md button', has_text='Выдать').click(); page.wait_for_timeout(300)
+        page.locator('.admin-md button', has_text='Отозвать').click(); page.wait_for_timeout(300)
+        calls = [c[0] for c in db(page)['calls']]
+        check('admin: grant sent, revoke waits for confirmation', 'admin_grant' in calls and 'admin_revoke' not in calls, calls)
+        g = [c[1] for c in db(page)['calls'] if c[0] == 'admin_grant'][0]
+        check('admin: grant has target and days', g['target'] == 'u2' and g['days'] == 30, g)
+        page.locator('.admin-md button', has_text='Точно отозвать?').click(); page.wait_for_timeout(300)
+        check('admin: revoke after confirmation', 'admin_revoke' in [c[0] for c in db(page)['calls']])
         page.context.close()
 
         # 9. Google returned an error: clear message, clean address bar

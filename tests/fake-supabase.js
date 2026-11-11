@@ -16,6 +16,13 @@
     async rpc(name,args){
       const db=load();
       if(name==='my_access')return {data:db.access,error:null};
+      if(name.startsWith('admin_')){
+        if(db.access.status!=='admin')return {data:null,error:{code:'42501',message:'forbidden'}};
+        db.calls.push([name,args||null]);save(db);
+        if(name==='admin_list_users')return {data:db.users||[],error:null};
+        if(name==='admin_blocked_domains')return {data:db.domains||[],error:null};
+        return {data:null,error:null}
+      }
       if(name==='save_state'){
         if(db.access.status==='expired')return {data:null,error:{code:'42501',message:'subscription_required'}};
         if(db.row&&db.row.rev!==args.expected_rev)return {data:null,error:{code:'40001',message:'rev_conflict'}};

@@ -667,11 +667,44 @@ const accountApi={
       draw()
     })
   },
+  openAdmin(){
+    modal((m,close)=>{
+      m.closest('.ov').classList.add('auth-modal');m.classList.add('admin-md');
+      const head=el('div','bar'),x=el('button','s','✕ Закрыть');x.onclick=close;head.append(el('h3',null,'Админ-панель'),x);
+      const users=el('div','tw'),doms=el('div');m.append(head,el('h3',null,'Пользователи'),users,el('h3',null,'Заблокированные домены почты'),doms);
+      const rpc=async(name,args)=>{const {data,error}=await this.sb.rpc(name,args);if(error)throw new Error(this.describe(error));return data};
+      const date=v=>v?new Date(v).toLocaleDateString('ru-RU'):'—';
+      const TS={granted:'выдан',awaiting_confirmation:'ждёт подтверждения почты',denied_duplicate:'отказ: ящик уже был',denied_disposable:'отказ: одноразовая почта',denied_no_email:'отказ: нет почты',pending_review:'ждёт одобрения',revoked:'отозван'};
+      const act=async(b,fn)=>{b.disabled=true;try{await fn();toast('Готово');await load()}catch(e){toast('Ошибка: '+e.message)}finally{b.disabled=false}};
+      const load=async()=>{
+        let list,blocked;
+        try{[list,blocked]=await Promise.all([rpc('admin_list_users'),rpc('admin_blocked_domains')])}catch(e){users.replaceChildren(el('div','mu','Не удалось загрузить: '+e.message));return}
+        const t=el('table'),hr=el('tr');['Почта','Доступ','Пробный','Подписка до','Сигналы','Вход','Действия'].forEach(h=>hr.append(el('th',null,h)));t.append(hr);
+        (list||[]).forEach(u=>{
+          const r=el('tr'),sig=[];if(u.same_mailbox_accounts>0)sig.push('⚠ тот же ящик: '+u.same_mailbox_accounts);if(u.same_device_accounts>0)sig.push('⚠ то же устройство: '+u.same_device_accounts);
+          const a=el('td'),days=el('input');days.type='number';days.value='30';days.style.width='64px';days.title='Дней (минус сокращает)';
+          const g=el('button','s','Выдать');g.onclick=()=>{const n=parseInt(days.value,10);if(!n)return toast('Укажи число дней');act(g,()=>rpc('admin_grant',{target:u.user_id,days:n,note:u.note||null}))};
+          a.append(days,' ',g);
+          if(u.trial_status==='pending_review'||/^denied_/.test(u.trial_status||'')){const ap=el('button','s','Одобрить пробный');ap.onclick=()=>act(ap,()=>rpc('admin_approve_trial',{target:u.user_id,days:14}));a.append(' ',ap)}
+          if(u.has_access){const rv=el('button','s','Отозвать');rv.onclick=()=>{if(!rv._a){rv._a=1;rv.textContent='Точно отозвать?';rv.classList.add('bad');setTimeout(()=>{rv._a=0;rv.textContent='Отозвать';rv.classList.remove('bad')},3000);return}act(rv,()=>rpc('admin_revoke',{target:u.user_id}))};a.append(' ',rv)}
+          [u.email||'—',u.has_access?'✅ есть':'⛔ нет',(TS[u.trial_status]||u.trial_status||'—')+' · до '+date(u.trial_ends_at),date(u.paid_until),sig.join(', ')||'—',date(u.last_sign_in_at)].forEach((v,i)=>{const c=el('td',i===4&&sig.length?'bad':null,v);r.append(c)});
+          r.append(a);t.append(r)
+        });
+        users.replaceChildren(t,el('div','mu','Всего: '+(list||[]).length));
+        const ul=el('div');(blocked||[]).forEach(d=>{const row=el('div','bar'),rm=el('button','s','Убрать');rm.onclick=()=>act(rm,()=>rpc('admin_unblock_domain',{domain:d.domain}));row.append(el('span',null,d.domain+(d.note?' · '+d.note:'')),rm);ul.append(row)});
+        if(!(blocked||[]).length)ul.append(el('div','mu','Список пуст'));
+        const f=el('div','bar'),di=el('input'),ni=el('input'),add=el('button','s','Заблокировать');di.placeholder='домен, например mailinator.com';ni.placeholder='заметка (необязательно)';
+        add.onclick=()=>{const d=di.value.trim().toLowerCase();if(!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d))return toast('Неверный домен');act(add,()=>rpc('admin_block_domain',{domain:d,note:ni.value.trim()||null}))};
+        f.append(di,ni,add);doms.replaceChildren(ul,f)
+      };
+      users.append(el('div','mu','Загрузка…'));load()
+    })
+  },
   openProfile(){
     modal((m,close)=>{
       m.closest('.ov').classList.add('auth-modal');
       m.append(el('h3',null,'Аккаунт'),el('div','mu',this.user.email));
-      const status=this.accessText();if(status)m.append(el('div','mu',status));if(this.readOnly)m.append(el('div','mu',this.reasonText()));
+      const status=this.accessText();if(status)m.append(el('div','mu',status));if(this.readOnly)m.append(el('div','mu',this.reasonText()));if(this.access&&this.access.status==='admin'){const ad=el('button','p','🛡 Админ-панель');ad.onclick=()=>{close();this.openAdmin()};m.append(ad)}
       const logout=el('button','s','Выйти из аккаунта');logout.onclick=async()=>{
         logout.disabled=true;
         try{clearTimeout(this.syncTimer);if(this.enabled)await this.sync();if(this.cloud){const {error}=await this.sb.auth.signOut({scope:'local'});if(error)console.warn('Sign-out request failed:',error.message)}else await this.request('/api/logout',{method:'POST',body:'{}'});this.enabled=false;this.user=null;this.rev=0;this.base=null;this.access=null;this.readOnly=false;this.readOnlyShown=false;this.applying=true;localStorage.clear();this.applying=false;T=[];P=[];CFG={accts:[{id:'fp',name:'FundingPips',bal:25000,dd:10,dl:5,tg:8},{id:'iq',name:'IQcapital',bal:50000,dd:10,dl:5,tg:8}]};applyLook();close();render();document.body.classList.add('pre');intro()}
