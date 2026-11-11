@@ -32,6 +32,33 @@ For a free static hosting setup with GitHub Pages and Firebase, see
 server-based hosting, the Ruby backend is still available; see
 [deploy/oracle-cloud.md](./deploy/oracle-cloud.md).
 
+## Structure
+
+- `public/journal.html` is a small shell; the app lives in `public/app.js` and
+  `public/app.css`. When you change them, bump the `?v=` value in the tags in
+  `journal.html` so browsers do not keep an old cached copy.
+- `public/briefing.js` / `public/briefing.css` are the left-docked Briefing
+  panel and the "Export for Claude" button.
+- `public/briefing/latest.json` and `history.json` hold the daily briefing and
+  the accuracy scoreboard (format: `public/briefing/README.md`). The repository
+  is public, so never put personal data, trades, or third-party paid material
+  there.
+
+## Screenshots
+
+Screenshots are no longer stored inside the 5 MB synced state. They live in the
+browser's IndexedDB and, when you are signed in, as separate Firestore
+documents `users/{uid}/journal/shot_{id}` (covered by the existing rules).
+Older screenshots stored inline are migrated automatically on load. Each
+screenshot is compressed to at most about 550 KB (Firestore documents are
+limited to 1 MiB). Backups include screenshots.
+
+## Animations
+
+Tab transitions have three modes in the customization panel: fast (default,
+about 0.25 s), full (cinematic, about 2.3 s) and off. The intro can be skipped
+with a click, Esc, Space or Enter.
+
 ## MetaTrader 5
 
 The journal currently supports **manual import** of MT5/ATAS CSV, HTML, and
