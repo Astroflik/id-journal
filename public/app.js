@@ -667,6 +667,25 @@ const accountApi={
       draw()
     })
   },
+  // One-time per device: screenshots that exist only in this browser (IndexedDB) are uploaded to the cloud bucket.
+  async uploadOldShots(){
+    if(!this.cloud||!this.user||this.readOnly)return;
+    const uid=this.user.uid,flag='shots-uploaded:'+uid;
+    try{
+      if(await mget(flag))return;
+      const have=new Set();
+      for(let off=0;;off+=1000){const {data,error}=await this.sb.storage.from('shots').list(uid,{limit:1000,offset:off});if(error)throw error;(data||[]).forEach(f=>have.add(f.name));if(!data||data.length<1000)break}
+      let sent=0,failed=0;
+      for(const rec of[...T,...P])for(const s of rec.shots||[]){
+        if(!s||!s.id||have.has(String(s.id)))continue;
+        const v=await mget('shot:'+s.id);if(!v||!/^data:image\//.test(String(v)))continue;
+        if(await SHOTS.put(s,v)){sent++;have.add(String(s.id))}else failed++
+      }
+      if(!failed)await mput(flag,1);
+      if(sent)toast('Старые скриншоты загружены в облако: '+sent+(failed?', не удалось: '+failed:''));
+      else if(failed)console.warn('Old screenshots not uploaded:',failed)
+    }catch(e){console.warn('Old screenshot upload failed',e)}
+  },
   openAdmin(){
     modal((m,close)=>{
       m.closest('.ov').classList.add('auth-modal');m.classList.add('admin-md');
@@ -762,4 +781,4 @@ const originalLookForm2=lookForm2;lookForm2=function(){originalLookForm2();const
 const originalRender=render;render=function(){originalRender();accountApi.updateNav();if(view==='home'&&ready){const v=$('#v');if(!v.querySelector('.home-watermark')){const mark=el('div','home-watermark');mark.style.opacity='.08';mark.style.animation='none';mark.append(logoEl());v.prepend(mark);v.style.position='relative';v.style.isolation='isolate'}}};
 coins();iconify(document.body);
 document.body.classList.add('first');setTimeout(()=>document.body.classList.remove('first'),1700);
-applyLook();render();(async()=>{await accountApi.init();await store.init();migrateShots();if(db){try{const s=await db.collection('settings').doc('cfg').get();if(s.exists&&s.data().accts){CFG=s.data();applyLook();render()}}catch(e){console.warn('Could not load journal settings:',e)}}mget('custom-background').then(setCustomBackground);if(accountApi.user){document.querySelectorAll('.intro video').forEach(video=>{video.pause();if(video.src.startsWith('blob:'))URL.revokeObjectURL(video.src)});document.querySelectorAll('.intro,.start').forEach(overlay=>overlay.remove());document.body.classList.remove('pre');render()}else intro()})();
+applyLook();render();(async()=>{await accountApi.init();await store.init();await migrateShots();accountApi.uploadOldShots();if(db){try{const s=await db.collection('settings').doc('cfg').get();if(s.exists&&s.data().accts){CFG=s.data();applyLook();render()}}catch(e){console.warn('Could not load journal settings:',e)}}mget('custom-background').then(setCustomBackground);if(accountApi.user){document.querySelectorAll('.intro video').forEach(video=>{video.pause();if(video.src.startsWith('blob:'))URL.revokeObjectURL(video.src)});document.querySelectorAll('.intro,.start').forEach(overlay=>overlay.remove());document.body.classList.remove('pre');render()}else intro()})();

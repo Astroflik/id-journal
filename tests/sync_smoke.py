@@ -114,6 +114,13 @@ def main():
         check('shot downloads back', isinstance(back, str) and back.startswith('data:image/png'), back)
         check('shot with a path-like id is refused', page.evaluate("d=>SHOTS.put({id:'../x'},d)", PNG) is False and len(db(page)['files']) == 1)
         check('non-image data is not uploaded', page.evaluate("SHOTS.put({id:'sabc2'},'http://127.0.0.1/x')") is False and len(db(page)['files']) == 1)
+        # old screenshots kept only in this browser are uploaded once
+        page.evaluate("async d=>{await mput('shot:sold1',d);await mput('shots-uploaded:uid-1',0);T.push({id:'Z',shots:[{id:'sold1'},{id:'sabc1'}]});await accountApi.uploadOldShots();T.pop()}", PNG)
+        check('old screenshot uploaded to the bucket', 'uid-1/sold1' in db(page)['files'] and len(db(page)['files']) == 2, list(db(page)['files']))
+        n = len([c for c in db(page)['calls'] if c[0] == 'list'])
+        page.evaluate("accountApi.uploadOldShots()")
+        check('old screenshot upload runs only once', len([c for c in db(page)['calls'] if c[0] == 'list']) == n)
+        page.evaluate("(()=>{const d=JSON.parse(sessionStorage.getItem('__fakedb'));delete d.files['uid-1/sold1'];sessionStorage.setItem('__fakedb',JSON.stringify(d))})()")
 
         # 5. profile shows the status; sign-out wipes this device
         page.evaluate('accountApi.openProfile()')

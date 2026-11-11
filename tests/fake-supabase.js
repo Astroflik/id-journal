@@ -33,6 +33,7 @@
     },
     storage:{from(){return {
       async upload(path,blob){const db=load();if(db.access.status==='expired')return {data:null,error:{message:'denied'}};const url=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(blob)});db.files[path]=url;save(db);return {data:{path},error:null}},
+      async list(prefix,opts){const db=load();db.calls.push(['list',prefix]);save(db);return {data:Object.keys(db.files).filter(k=>k.startsWith(prefix+'/')).map(k=>({name:k.slice(prefix.length+1)})),error:null}},
       async download(path){const db=load();if(!db.files[path])return {data:null,error:{message:'not found'}};return {data:await(await fetch(db.files[path])).blob(),error:null}}
     }}}
   };
