@@ -41,10 +41,10 @@
   // Each point: x, y, z, kind + seed. Kinds: 0 terrain, 1 solid objects, 2 stream, 3 dust, 4 globe group, 5 line work.
   var den = F.den || (lite ? .34 : small ? .5 : 1), rnd = prng(7);
   var Z0 = 14, Z1 = -96, NB = 28, BW = (Z0 - Z1) / NB;
-  var cap = floor(560000 * den) + 60000, buf = new Float32Array(cap * 4), bk = new Uint8Array(cap), n = 0, anchors = [], tasks = [];
+  var cap = floor(900000 * den) + 80000, buf = new Float32Array(cap * 4), bk = new Uint8Array(cap), n = 0, anchors = [], tasks = [];
   function add(x, y, z, k, sd, bz) {
     if (n >= cap) return; var o = n * 4; buf[o] = x; buf[o + 1] = y; buf[o + 2] = z; buf[o + 3] = k + min(.999, max(0, sd));
-    bk[n++] = k === 2 ? NB : min(NB - 1, max(0, floor((Z0 - (bz === undefined ? z : bz)) / BW)));
+    bk[n++] = k === 6 ? NB + 1 : k === 2 ? NB : min(NB - 1, max(0, floor((Z0 - (bz === undefined ? z : bz)) / BW)));
   }
   function seg(a, b, step, k, s0, s1, bz) {
     var dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], m = max(2, Math.ceil(Math.hypot(dx, dy, dz) / step * den));
@@ -52,14 +52,15 @@
   }
   // terrain, slab by slab; denser where the camera flies high (start and globe)
   (function () {
-    var NT = 300000 * den, SL = 43, sw = [], sum = 0, i;
+    var NT = 360000 * den, SL = 43, sw = [], sum = 0, i;
     for (i = 0; i < SL; i++) { var zc = 11.5 - (i + .5) * 2.5, w = zc > -9 ? 2.6 : zc < -64 ? 1.5 : 1; sw.push(w); sum += w; }
     sw.forEach(function (w, i) {
       tasks.push(function () {
         var cnt = floor(NT * w / sum), got = 0, tr = 0, zs = 11.5 - i * 2.5;
-        while (got < cnt && tr < cnt * 9) {
+        while (got < cnt && tr < cnt * 14) {
           tr++; var z = zs - rnd() * 2.5, x = cx(z) + (rnd() < .5 ? -1 : 1) * 12.5 * Math.pow(rnd(), 1.5), h = H(x, z), t = h * L;
-          if (abs(t - Math.round(t)) < .06 || rnd() < .13) { add(x, h, z, 0, rnd()); got++; }
+          var sh = min(1, max(0, .42 + (H(x + .17, z + .22) - h) * 3.2));   // light from +x+z: slopes facing away are darker
+          if (abs(t - Math.round(t)) < .07 || rnd() < .04 + .34 * sh * sh) { add(x, h, z, 0, sh); got++; }
         }
       });
     });
@@ -101,6 +102,25 @@
         if (i === row[4]) anchors[3] = [x, wh + .05, z];
       }
     });
+  });
+  // floor under the candle corridor: a footprint carpet, cell density = traded volume, darkest cell framed (POC)
+  tasks.push(function () {
+    var r3 = prng(41), COLS = 7, CW = .34, RH = .42;
+    for (var zr = -6; zr > -38; zr -= RH) {
+      var best = -1, bi = 0, vols = [];
+      for (var c = 0; c < COLS; c++) { var v = Math.pow(noise(c * .9 + 3, zr * .7), 2) * (1.2 - abs(c - 3) * .13) * (.6 + .6 * r3()); vols.push(v); if (v > best) { best = v; bi = c; } }
+      for (c = 0; c < COLS; c++) {
+        var x0 = cx(zr) + (c - (COLS - 1) / 2) * CW, m = floor(vols[c] * 260 * den) + 6;
+        for (var j = 0; j < m; j++) { var px = x0 + (r3() - .5) * CW * .86, pz = zr - r3() * RH * .86 - RH * .07; add(px, H(px, pz) + .02, pz, 5, .18 + .45 * vols[c]); }
+        if (c === bi) {
+          var a = [x0 - CW / 2, zr], b = [x0 + CW / 2, zr - RH];
+          [[a[0], a[1], b[0], a[1]], [b[0], a[1], b[0], b[1]], [b[0], b[1], a[0], b[1]], [a[0], b[1], a[0], a[1]]].forEach(function (e) {
+            seg([e[0], H(e[0], e[1]) + .03, e[1]], [e[2], H(e[2], e[3]) + .03, e[3]], .012, 5, .8, 1);
+          });
+        }
+      }
+      for (c = 0; c <= COLS; c++) { var gx = cx(zr) + (c - COLS / 2) * CW; add(gx, H(gx, zr) + .02, zr, 5, .45); }
+    }
   });
   // chart grid walls beside the candles: price levels and time ticks
   tasks.push(function () {
@@ -159,10 +179,13 @@
         V.push([x + a * cos(ya) + c1 * sin(ya), y + b1, z - a * sin(ya) + c1 * cos(ya)]);
       }
       for (j = 0; j < 12; j++) seg(V[E[j][0]], V[E[j][1]], .016, 1, .3, .8, z);
+      var gh = H(x, z), sm2 = s * (1 + (y - gh) * .25), mm = floor(420 * den * s);
+      for (j = 0; j < mm; j++) { var ra2 = sm2 * Math.sqrt(-2 * Math.log(rnd() + 1e-6)) * .5, aa = rnd() * 2 * PI, qx = x - (y - gh) * .25 + cos(aa) * ra2, qz = z - (y - gh) * .3 + sin(aa) * ra2; add(qx, H(qx, qz) + .015, qz, 5, .25 + .35 * rnd()); }
     }
     for (i = 0; i < 70; i++) {
       var pz = 4 - rnd() * 96, ps = rnd() < .5 ? -1 : 1, px = cx(pz) + ps * (2.6 + rnd() * 8), g = H(px, pz), ph = 1 + rnd() * 3.2;
       seg([px, g, pz], [px, g + ph, pz], .02, 1, .2, .7);
+      for (j = 0; j < 90 * den; j++) { var sr = .05 + rnd() * .22, sx2 = px - sr * .9 - .02, sz2 = pz - sr * 1.1 + (rnd() - .5) * .08; add(sx2, H(sx2, sz2) + .015, sz2, 5, .3 + .3 * rnd()); }
       seg([px - .09, g + ph, pz], [px + .09, g + ph, pz], .012, 1, .6, 1); seg([px, g + ph, pz - .09], [px, g + ph, pz + .09], .012, 1, .6, 1);
     }
     for (i = 0; i < 260; i++) {
@@ -174,35 +197,61 @@
   for (var di = 0; di < 4; di++) tasks.push(function () {
     for (var i = 0; i < 9000 * den; i++) { var z = Z0 - 2 - rnd() * 106, x = cx(z) + (rnd() + rnd() - 1) * 10; add(x, .3 + Math.pow(rnd(), 1.5) * 6.5, z, 3, rnd()); }
   });
+  // sky: directions around the camera (it never gets closer): horizon haze, three ridge layers, a striped sun, dome arcs
+  function sky(az, el, sd) { var ce = cos(el); add(sin(az) * ce * 50, sin(el) * 50, -cos(az) * ce * 50, 6, sd); }
+  var DG = PI / 180;
+  tasks.push(function () {
+    for (var i = 0; i < 34000 * den; i++) { var el = (Math.pow(rnd(), 2.2) * 15 - 1.5) * DG; sky(rnd() * 2 * PI, el, .05 + .2 * (1 - el / (15 * DG))); }
+    for (var a = 0; a < 2 * PI; a += .004 / den) if (rnd() < .5) sky(a, 26 * DG + (rnd() - .5) * .002, .22);
+    for (a = 0; a < 2 * PI; a += .006 / den) if ((a * 40 | 0) % 2) sky(a, 44 * DG, .15);
+  });
+  [0, 1, 2].forEach(function (Ly) {
+    tasks.push(function () {
+      var top = function (az) { return (1.4 + (2 - Ly) * 1.6 + fbm(az * (2.2 + Ly) + Ly * 13, Ly * 7.3) * (5 - Ly) - 1.2) * DG; };
+      var al = [.16, .27, .42][Ly], m = floor([24000, 30000, 38000][Ly] * den), i = 0, tr = 0;
+      while (i < m && tr < m * 4) { tr++; var az = rnd() * 2 * PI, t = top(az), el = -3 * DG + rnd() * 16 * DG; if (el > t) continue; sky(az, el, al * (.55 + .45 * (el + 3 * DG) / (t + 3 * DG))); i++; }
+      for (az = 0; az < 2 * PI; az += .0025 / den) sky(az, top(az), min(.95, al * 2.6));
+    });
+  });
+  tasks.push(function () {
+    var SA = .32, SE = 9 * DG, SRd = 8.5 * DG, i;
+    for (i = 0; i < 20000 * den; i++) {
+      var rr = SRd * Math.sqrt(rnd()), an = rnd() * 2 * PI, dy = sin(an) * rr, dx = cos(an) * rr, f = (dy + SRd) / (2 * SRd);
+      var band = (dy / SRd + 1) * 7, cut = .62 - f * .62;                   // stripes widen toward the bottom of the sun
+      if (band - floor(band) < cut) continue; sky(SA + dx / cos(SE), SE + dy, .16 + .3 * f);
+    }
+    [1.25, 1.55].forEach(function (k, j) { for (var a = 0; a < 2 * PI; a += .01 / den) if (j === 0 || (a * 18 | 0) % 2) sky(SA + cos(a) * SRd * k / cos(SE), SE + sin(a) * SRd * k, .2 - j * .07); });
+    anchors[7] = null;
+  });
   // tape streaks flowing against the flight: (angle, radius, phase)
   tasks.push(function () {
     for (var i = 0; i < 1900 * den; i++) { var th = rnd() * 2 * PI, r = .5 + 5.5 * Math.pow(rnd(), .8), u = rnd(); for (var j = 0; j < 12; j++) add(th, r, u + j * .0006, 2, j / 11.01); }
   });
 
   // ---- GL ----
-  var VS = 'attribute vec4 p;uniform mat4 m;uniform vec4 u0,u1,u2,u3;uniform vec3 lay,sc;varying float a;' +
+  var VS = 'attribute vec4 p;uniform mat4 m;uniform vec4 u0,u1,u2,u3;uniform vec3 lay,sc,eye;varying float a;' +
     'float cxf(float z){return 1.6*sin(z*.085)+.7*sin(z*.19+1.3);}float cyf(float z){return 1.7+.35*sin(z*.13);}' +
     'void main(){float k=floor(p.w),sd=fract(p.w);vec3 q=p.xyz;float al=0.,sz=1.;' +
-    'if(k<.5){float tt=q.y*u0.y;float d=abs(tt-floor(tt+.5));float ln=(1.-smoothstep(0.,.06,d))*(.15+.85*lay.y);al=.07+.3*lay.x+.62*ln;sz=.9+.8*ln;}' +
+    'if(k<.5){float tt=q.y*u0.y;float ix=floor(tt+.5);float d=abs(tt-ix);float mj=step(mod(ix+400.,4.),.5);float ln=(1.-smoothstep(0.,.05+.035*mj,d))*(.15+.85*lay.y);al=(.05+.5*sd*sd)*(.3+.7*lay.x)+(.7+.3*mj)*ln;sz=.85+.25*sd+(.7+.5*mj)*ln;}' +
     'else if(k<1.5){al=(.3+.6*sd)*(.15+.85*lay.x);}' +
     'else if(k<2.5){float sp=.7+.6*fract(q.x*3.7);float u=fract(q.z+u0.w*.011*sp);float z=-96.+u*110.;float th=q.x+z*.3;' +
     'q=vec3(cxf(z)+q.y*cos(th),cyf(z)-.45+abs(q.y*sin(th))*.75,z);al=(.12+.8*sd)*(.08+.92*lay.z)*smoothstep(0.,.03,u)*(1.-smoothstep(.97,1.,u));sz=.7+.7*sd;}' +
     'else if(k<3.5){q.x+=sin(u0.z*.3+sd*40.)*.15;q.y+=sin(u0.z*.23+sd*70.)*.12;al=.1+.32*(.5+.5*sin(u0.z*(.5+sd)+sd*90.));sz=.6+sd;}' +
     'else if(k<4.5){vec3 r=q-sc;float an=u0.z*.07;float c=cos(an),s=sin(an);q=sc+vec3(r.x*c+r.z*s,r.y,r.z*c-r.x*s);al=(.3+.55*sd)*(.2+.8*lay.x);}' +
-    'else{al=(.3+.55*sd)*(.12+.88*lay.y);}' +
+    'else if(k<5.5){al=(.3+.55*sd)*(.12+.88*lay.y);}else{q+=eye;al=sd;sz=6.;}' +
     'vec4 c=m*vec4(q,1.);c.xy+=u2.xy*c.w;float w=max(c.w,.001);vec2 asp=vec2(u1.x,1.);vec2 nd=c.xy/w;' +
-    'vec2 dv=(nd-u2.zw)*asp;float dd=dot(dv,dv);float inf=exp(-dd/.06)*u1.w;' +                       // cursor lens
+    'vec2 dv=(nd-u2.zw)*asp;float dd=dot(dv,dv);float inf=exp(-dd/.045)*u1.w;' +                       // cursor lens
     'vec2 rv=(nd-u3.xy)*asp;float rd=length(rv);float rq=(rd-u3.z*1.7)/.13;float rw=exp(-rq*rq)*max(0.,1.-u3.z/1.3);' + // click ripple
-    'c.xy+=(dv/max(sqrt(dd),.0001)*inf*.075+rv/max(rd,.0001)*rw*.06)/asp*w;gl_Position=c;' +
-    'float fog=(1.-smoothstep(u1.y,u1.z,w))*smoothstep(.1,.6,w);float ps=u0.x*sz/w*(1.+inf*.9+rw*1.3);float big=max(ps/(u0.x*.22),1.);' +
-    'gl_PointSize=clamp(ps,u3.w,u0.x*.9);a=min(1.,al*(1.+inf*.9+rw))*fog/pow(big,1.25);}';
+    'c.xy+=(dv/max(sqrt(dd),.0001)*inf*.024+rv/max(rd,.0001)*rw*.035)/asp*w;gl_Position=c;' +
+    'float fog=k>5.5?1.:(1.-smoothstep(u1.y,u1.z,w))*smoothstep(.1,.6,w);float ps=u0.x*sz/w*(1.+inf*.3+rw*.7);float big=max(ps/(u0.x*.22),1.);' +
+    'gl_PointSize=clamp(ps,u3.w,u0.x*.9);a=min(1.,al*(1.+inf*.35+rw*.6))*fog/pow(big,1.25);}';
   var FS = 'precision mediump float;varying float a;void main(){vec2 q=gl_PointCoord-.5;float r=dot(q,q);if(r>.25)discard;gl_FragColor=vec4(.04,.04,.045,a*(1.-smoothstep(.1,.25,r)));}';
   function sh(type, src) { var o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; }
   var prog, U = {};
   try { prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link'); }
   catch (e) { if (W.console) console.warn('Landing scene is off:', e.message); root.classList.add('noscene'); return; }
   gl.useProgram(prog);
-  ['m', 'u0', 'u1', 'u2', 'u3', 'lay', 'sc'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
+  ['m', 'u0', 'u1', 'u2', 'u3', 'lay', 'sc', 'eye'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
   gl.uniform3f(U.sc, SC[0], SC[1], SC[2]);
   gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.clearColor(.961, .961, .953, 1);
 
@@ -277,11 +326,11 @@
 
   function draw(dt) {
     var k = keysAt(cur), wide = cssW / cssH, port = wide < 1, z = k[0], tz = z + k[3];
-    var e = [cx(z) + k[1] + mx * .22, k[2] - my * .08, z], tg = [cx(tz) + k[4] + mx * .55, k[5] - my * .3, tz];
+    var e = [cx(z) + k[1] + mx * .22, k[2] - my * .08, z], tg = [cx(tz) + k[4] + mx * .4, k[5] - my * .22, tz];
     if (!reduce) { e[0] += sin(T * .21) * .07; e[1] += sin(T * .17) * .05; }
     e[1] = max(e[1], H(e[0], e[2]) + .45);
     var f = (k[7] + fovK) * PI / 180; if (port) f = 2 * Math.atan(Math.tan(f / 2) * min(1.9, .78 / wide));
-    var M = mul(persp(f, wide, .05, 70), look(e, tg, k[6] + mx * .035));
+    var M = mul(persp(f, wide, .05, 80), look(e, tg, k[6] + mx * .035));
     var ox = port ? 0 : k[8] * min(1, max(0, (wide - 1) / .5)), oy = port ? k[9] : 0;
     ['dots', 'lines', 'pins'].forEach(function (key) { lay[key] += ((layers[key] ? 1 : 0) - lay[key]) * (reduce ? 1 : min(1, dt * 9)); });
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -290,7 +339,8 @@
     gl.uniform4f(U.u1, wide, 13, 30, ms);
     gl.uniform4f(U.u2, ox, oy, mpx, mpy);
     gl.uniform4f(U.u3, rpx, rpy, ra, 1.25 * cv.height / cssH);
-    gl.uniform3f(U.lay, lay.dots, lay.lines, lay.pins);
+    gl.uniform3f(U.lay, lay.dots, lay.lines, lay.pins); gl.uniform3f(U.eye, e[0], e[1], e[2]);
+    c = floor(cnt[NB + 1] * frac); if (c) gl.drawArrays(gl.POINTS, st[NB + 1], c);
     var b0 = max(0, floor((Z0 - (e[2] + 8)) / BW)), b1 = min(NB - 1, floor((Z0 - (e[2] - 33)) / BW)), b, c;
     for (b = b0; b <= b1; b++) { c = floor(cnt[b] * frac); if (c) gl.drawArrays(gl.POINTS, st[b], c); }
     c = floor(cnt[NB] * frac); if (c) gl.drawArrays(gl.POINTS, st[NB], c);
@@ -338,7 +388,7 @@
     fovK += (min(13, abs(vel) * 10) - fovK) * (1 - exp(-dt * 6));
     T += dt; ST += dt * (1 + min(9, abs(vel) * 8));
     mx += (tmx - mx) * (1 - exp(-dt * 3)); my += (tmy - my) * (1 - exp(-dt * 3));
-    mst += (0 - mst) * (1 - exp(-dt * 2.5)); ms += ((mpx < 5 ? .55 + mst : 0) - ms) * (1 - exp(-dt * 8)); ra += dt;
+    mst += (0 - mst) * (1 - exp(-dt * 2.5)); ms += ((mpx < 5 ? .4 + mst : 0) - ms) * (1 - exp(-dt * 8)); ra += dt;
     draw(dt); if (dt > 0) quality(dt);
     W.requestAnimationFrame(frame);
   }
@@ -362,7 +412,7 @@
     W.addEventListener('pointermove', function (ev) {
       if (ev.pointerType === 'touch') return;
       var x = ev.clientX / W.innerWidth * 2 - 1, y = 1 - ev.clientY / W.innerHeight * 2;
-      mst = min(1.1, mst + Math.hypot(x - lpx, y - lpy) * 2.2); lpx = x; lpy = y; mpx = x; mpy = y;
+      mst = min(.45, mst + Math.hypot(x - lpx, y - lpy) * 1.2); lpx = x; lpy = y; mpx = x; mpy = y;
       if (fine) { tmx = x; tmy = -y; }
     }, { passive: true });
     D.addEventListener('pointerleave', function () { mpx = 9; mpy = 9; });
@@ -373,7 +423,7 @@
 
   // ---- build, then start ----
   function finish() {
-    var i, b, total = NB + 1; N = n; cnt = new Array(total); st = new Array(total);
+    var i, b, total = NB + 2; N = n; cnt = new Array(total); st = new Array(total);
     for (b = 0; b < total; b++) cnt[b] = 0;
     for (i = 0; i < N; i++) cnt[bk[i]]++;
     var s = 0; for (b = 0; b < total; b++) { st[b] = s; s += cnt[b]; }

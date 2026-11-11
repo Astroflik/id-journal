@@ -41,9 +41,9 @@
   function apply(lang) {
     var map = lang === 'en' ? EN : RU;
     var els = D.body.querySelectorAll('h1,h2,p,footer p');
-    els.forEach(function (e) { var h = e.innerHTML.trim(); if (map[h] != null && /<em>|<a /.test(h + map[h])) e.innerHTML = map[h]; });
+    els.forEach(function (e) { var raw = e.dataset.raw != null, h = (raw ? e.dataset.raw : e.innerHTML).trim(); if (map[h] == null) return; if (raw) e.dataset.raw = map[h]; else if (/<em>|<a /.test(h + map[h])) e.innerHTML = map[h]; });
     var w = D.createTreeWalker(D.body, NodeFilter.SHOW_TEXT, null), n, list = [];
-    while ((n = w.nextNode())) { if (n.parentNode.closest('script,style')) continue; list.push(n); }
+    while ((n = w.nextNode())) { if (n.parentNode.closest('script,style,[data-raw]')) continue; list.push(n); }
     list.forEach(function (n) { var r = tr(n.nodeValue, map); if (r != null) n.nodeValue = r; });
     D.querySelectorAll('[aria-label]').forEach(function (e) { var r = tr(e.getAttribute('aria-label'), map); if (r != null) e.setAttribute('aria-label', r); });
     D.documentElement.lang = lang; D.documentElement.dataset.lang = lang;
