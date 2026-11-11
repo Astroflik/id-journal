@@ -58,6 +58,7 @@
       return;
     }
     if (b.date !== kyivToday()) root.append(h('div', 'warn', 'Это сводка за ' + b.date + ', на сегодня ещё не готова.'));
+    if (b.test) root.append(h('div', 'warn', 'ПРОБНАЯ СВОДКА: проверка механики, не для торговых решений.'));
     root.append(h('div', 'mu', (b.instrument || 'NQ') + ' · обновлено ' + fmtTime(b.updatedAt)));
 
     if (b.bias) {
