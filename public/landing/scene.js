@@ -41,7 +41,7 @@
   // Each point: x, y, z, kind + seed. Kinds: 0 terrain, 1 solid objects, 2 stream, 3 dust, 4 globe group, 5 line work.
   var den = F.den || (lite ? .34 : small ? .5 : 1), rnd = prng(7);
   var Z0 = 14, Z1 = -96, NB = 28, BW = (Z0 - Z1) / NB;
-  var cap = floor(900000 * den) + 80000, buf = new Float32Array(cap * 4), bk = new Uint8Array(cap), n = 0, anchors = [], tasks = [];
+  var cap = floor(1750000 * den) + 80000, buf = new Float32Array(cap * 4), bk = new Uint8Array(cap), n = 0, anchors = [], tasks = [];
   function add(x, y, z, k, sd, bz) {
     if (n >= cap) return; var o = n * 4; buf[o] = x; buf[o + 1] = y; buf[o + 2] = z; buf[o + 3] = k + min(.999, max(0, sd));
     bk[n++] = k === 6 ? NB + 1 : k === 2 ? NB : min(NB - 1, max(0, floor((Z0 - (bz === undefined ? z : bz)) / BW)));
@@ -52,7 +52,7 @@
   }
   // terrain, slab by slab; denser where the camera flies high (start and globe)
   (function () {
-    var NT = 470000 * den, SL = 43, sw = [], sum = 0, i;
+    var NT = 1150000 * den, SL = 43, sw = [], sum = 0, i;
     for (i = 0; i < SL; i++) { var zc = 11.5 - (i + .5) * 2.5, w = zc > -9 ? 2.6 : zc < -64 ? 1.5 : 1; sw.push(w); sum += w; }
     sw.forEach(function (w, i) {
       tasks.push(function () {
@@ -60,7 +60,7 @@
         while (got < cnt && tr < cnt * 14) {
           tr++; var z = zs - rnd() * 2.5, x = cx(z) + (rnd() < .5 ? -1 : 1) * 12.5 * Math.pow(rnd(), 1.5), h = H(x, z), t = h * L;
           var sh = min(1, max(0, .42 + (H(x + .17, z + .22) - h) * 3.2));   // light from +x+z: slopes facing away are darker
-          if (abs(t - Math.round(t)) < .085 || rnd() < .015 + .12 * sh * sh) { add(x, h, z, 0, sh); got++; }
+          if (abs(t - Math.round(t)) < .085 || rnd() < .03 + .2 * sh * sh) { add(x, h, z, 0, sh); got++; }
         }
       });
     });
