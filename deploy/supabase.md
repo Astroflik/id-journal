@@ -47,6 +47,26 @@ live in a Supabase project; the browser talks to it directly.
 - `my_access()` returns `trial` with the reason when there is no trial.
 - IP addresses are not used for any of this.
 
+## Profiles and clans (migration 0003)
+
+- Everything goes through RPC functions; the tables (`profiles`, `clans`,
+  `clan_members`, `clan_invites`, `clan_messages`) have RLS on and no grants.
+- Profile: `my_profile()`, `save_profile(nick, bio, links, avatar_path)`,
+  `get_profile(target)`. Nick 3–20 chars, unique ignoring case; up to 5 https links.
+- Clan: `create_clan`, `update_clan` (null keeps a field, emblem `''` removes it),
+  `my_clan`, `clan_create_invite(days, max_uses)`, `clan_invites_list`,
+  `clan_revoke_invite`, `clan_preview(code)`, `clan_join(code)`, `clan_leave`,
+  `clan_set_role(target, role)` (leader only; `leader` hands the clan over),
+  `clan_kick(target)`, `clan_disband`. One clan per user, up to 50 members.
+  When the leader leaves, the oldest officer (else member) leads; the last
+  member leaving removes the clan.
+- Chat: `clan_send(body)` (20 messages a minute), `clan_messages(after_id,
+  before_id, lim)`, `clan_delete_message(id)` (author, officer, leader).
+- Writing needs an active trial/subscription; leaving a clan is always allowed.
+  Errors come back as text codes (`nick_taken`, `invite_invalid`, …).
+- Avatars and emblems: public bucket `avatars`, 512 KB, png/jpeg/webp, path
+  `<user id>/<file>`; only the owner writes there.
+
 ## After moving the site to another address
 
 Add the new address to Redirect URLs (and set it as Site URL) in Supabase, and

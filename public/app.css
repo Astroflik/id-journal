@@ -255,3 +255,28 @@ body.mo-light *,body.mo-light *::before,body.mo-light *::after{animation-iterati
 body.mo-light .intro video{display:none}
 body.mo-off *,body.mo-off *::before,body.mo-off *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 body.mo-off .dl{stroke-dashoffset:0!important}
+/* ---- profile and clans (social.js) ---- */
+.so-md{width:min(760px,100%)}.so-head{justify-content:space-between}.so-head h3{margin:0}
+.so-tabs{display:flex;gap:4px;padding:3px;border:1px solid var(--bd);border-radius:999px}.so-tabs button{border:0;background:none;border-radius:999px;padding:6px 14px;color:var(--mu)}.so-tabs button.on{background:var(--ac);color:#fff}
+.so-body{display:flex;flex-direction:column;gap:12px;margin-top:8px}.so-body h4{margin:0 0 8px}
+.so-face{--s:40px;width:var(--s);height:var(--s);flex:0 0 var(--s);border-radius:50%;overflow:hidden;display:inline-grid;place-items:center;background:color-mix(in srgb,var(--ac) 30%,transparent);color:var(--tx);font-weight:600;font-size:calc(var(--s)*.42);border:1px solid var(--bd);vertical-align:middle}
+.so-face img{width:100%;height:100%;object-fit:cover;display:block}.so-face.em{border-radius:16px}.so-face.txt{font-size:15px;letter-spacing:.04em;background:var(--cc,var(--ac));color:#fff}.so-face.nav{--s:26px;border:0}
+.so-me{display:flex;gap:16px;align-items:center}.so-pic-side{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.so-pic-side small{flex-basis:100%}
+.so-field{display:flex;flex-direction:column;gap:4px;flex:1 1 140px}.so-field>span,.so-lbl{font-size:.85em;color:var(--mu)}.so-field small{font-size:.78em}
+.so-links{display:flex;flex-direction:column;gap:6px}.so-link{display:grid;grid-template-columns:minmax(80px,1fr) 2.4fr auto;gap:6px}
+.so-card{border:1px solid var(--bd);border-radius:16px;padding:14px;background:color-mix(in srgb,var(--pn) 60%,transparent)}.so-card p{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.so-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0}.so-member>b{min-width:90px}
+.so-acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}.so-acts button{font-size:.82em;padding:4px 10px}
+.so-role{font-size:.75em;padding:2px 8px;border-radius:999px;border:1px solid var(--bd);color:var(--mu)}.so-role.r-leader{background:var(--ac);color:#fff;border-color:transparent}.so-role.r-officer{color:var(--tx)}
+.so-tag{font-weight:700;color:var(--cc);letter-spacing:.03em}.so-name{display:inline-flex;align-items:center;gap:4px}
+.so-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.so-chips a{font-size:.85em;padding:3px 10px;border:1px solid var(--bd);border-radius:999px;text-decoration:none;color:var(--tx)}
+.so-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 10px}.so-entry button{margin-left:auto}
+.so-clan-head{display:flex;gap:14px;align-items:flex-start;padding:14px;border-radius:18px;border:1px solid color-mix(in srgb,var(--cc) 50%,var(--bd));background:linear-gradient(135deg,color-mix(in srgb,var(--cc) 22%,transparent),transparent 70%)}.so-clan-head h3{margin:0 0 4px}
+.so-color{width:56px;height:36px;padding:2px;cursor:pointer}.so-code{text-transform:uppercase;letter-spacing:.12em;font-family:ui-monospace,monospace;max-width:220px}
+.so-inv code{font-size:1.05em;letter-spacing:.1em;font-weight:600}
+.so-msgs{max-height:320px;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px;margin:6px 0}
+.so-msg{max-width:86%;align-self:flex-start;border:1px solid var(--bd);border-radius:14px 14px 14px 4px;padding:7px 10px}.so-msg.mine{align-self:flex-end;border-radius:14px 14px 4px 14px;background:color-mix(in srgb,var(--ac) 18%,transparent)}
+.so-msg p{margin:4px 0 0}.so-msg-h{display:flex;align-items:center;gap:6px;font-size:.8em}.so-msg-h time{margin-left:auto}
+.so-del{border:0;background:none;color:var(--mu);padding:0 4px;opacity:0;cursor:pointer}.so-msg:hover .so-del,.so-del:focus{opacity:1}
+.so-send{display:flex;gap:8px}.so-send input{flex:1}.so-out{justify-content:flex-end}.so-gap{margin-top:4px}
+@media (max-width:560px){.so-me{flex-direction:column;align-items:flex-start}.so-link{grid-template-columns:1fr auto}.so-link input:first-child{grid-column:1/-1}.so-acts{margin-left:0}}
