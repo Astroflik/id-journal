@@ -16,7 +16,7 @@ em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.0
 .wrap{max-width:1240px;margin:0 auto;padding:0 clamp(20px,4vw,48px)}
 /* scene layers */
 #scene{position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;z-index:0;opacity:0;transition:opacity 1.6s var(--ease)}
-.scene-on #scene{opacity:1}.scene-off #scene,.scene-off #pins,.scene-off .hud{visibility:hidden}
+.scene-on #scene{opacity:1}.scene-off #scene,.scene-off #pins,.scene-off .hud,.scene-off .veil{visibility:hidden}
 .noscene #scene,.noscene #pins,.noscene .hud{display:none}
 .veil{position:fixed;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(245,245,243,.95) 0,rgba(245,245,243,.78) 30%,rgba(245,245,243,0) 60%)}
 #pins{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
@@ -79,7 +79,7 @@ h2{font-weight:500;font-size:clamp(2rem,4.2vw,3.5rem);line-height:1.02;letter-sp
 .dark h2{font-size:clamp(2.4rem,6vw,5rem);max-width:14ch}.dark .lead{color:#a3a5ad}.dark .k{color:#a3a5ad}
 .dark .btn.p{background:var(--w);color:var(--k);border-color:var(--w)}.dark .btn .ar{background:var(--k);color:var(--w)}
 .dark :focus-visible{outline-color:var(--w)}
-footer{position:relative;background:var(--k);color:#a3a5ad;padding:26px 0 40px;border-top:1px solid #26262a}
+footer{position:relative;z-index:3;background:var(--k);color:#a3a5ad;padding:26px 0 40px;border-top:1px solid #26262a}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}footer a{text-decoration:none}footer a:hover{color:var(--w)}
 .rv{opacity:0;transform:translateY(22px);transition:opacity 1s var(--ease),transform 1s var(--ease)}.rv.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.rv{opacity:1;transform:none;transition:none}.btn,.pill,.sw,.sw::after,#scene{transition:none}.pin[data-main] i::before{animation:none;display:none}}
@@ -142,7 +142,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 <p class="lead rv">Войдите через Google, и журнал откроется сразу. Данные только ваши и доступны с любого устройства.</p>
 <div class="cta rv"><a class="btn p" href="app/?login=1">Войти через Google <span class="ar" aria-hidden="true">→</span></a></div></div></section>
 </main>
-<footer><div class="wrap"><span class="mono">© Journal by myIDgod</span><span class="mono"><a href="privacy.html">Политика конфиденциальности</a></span></div></footer>
+<footer><div class="wrap" style="display:block"><p style="max-width:62ch;margin:0 0 22px;font-size:14px">Journal by myIDgod использует вход через Google только чтобы определить ваш аккаунт: из данных Google сервис получает адрес почты и внутренний идентификатор. Эти данные нужны для входа, синхронизации журнала и защиты пробного периода, их не продают и не передают рекламным сетям. Подробности в <a href="privacy.html">политике конфиденциальности</a>.</p><div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap"><span class="mono">© Journal by myIDgod</span><span class="mono"><a href="privacy.html">Политика конфиденциальности</a></span></div></div></footer>
 <script>
 (function(){var d=document,root=d.documentElement;
 try{for(var i=0;i<localStorage.length;i++){if(/^sb-.*-auth-token$/.test(localStorage.key(i))){var t=d.getElementById('top-cta'),l=d.getElementById('login');t.textContent='Открыть журнал';t.href='app/';l.firstChild.nodeValue='Открыть журнал ';l.href='app/';break}}}catch(e){}
@@ -151,7 +151,7 @@ d.querySelectorAll('[data-layer]').forEach(function(b){b.addEventListener('click
 var els=d.querySelectorAll('.rv');if('IntersectionObserver' in window){var io=new IntersectionObserver(function(a){a.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{threshold:.12});els.forEach(function(e){io.observe(e)})}else els.forEach(function(e){e.classList.add('in')});
 // The 3D scene loads after the first screen is ready; Data Saver skips it.
 var c=navigator.connection;if(c&&c.saveData){root.classList.add('noscene');return}
-function go(){var s=d.createElement('script');s.src='landing/scene.js?v=20261111d';s.async=true;s.onerror=function(){root.classList.add('noscene')};d.body.appendChild(s)}
+function go(){var s=d.createElement('script');s.src='landing/scene.js?v=20261111e';s.async=true;s.onerror=function(){root.classList.add('noscene')};d.body.appendChild(s)}
 function idle(){(window.requestIdleCallback||function(f){setTimeout(f,150)})(go,{timeout:1200})}
 if(d.readyState==='complete')idle();else window.addEventListener('load',idle)})();
 </script></body></html>

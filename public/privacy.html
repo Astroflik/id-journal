@@ -2,8 +2,9 @@
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Политика конфиденциальности · Journal by myIDgod</title><meta name="color-scheme" content="light dark">
-<style>body{font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:760px;margin:0 auto;padding:32px 20px 60px;color:#e6ebf5;background:#0b0f17}h1{font-size:1.6rem}h2{font-size:1.1rem;margin-top:28px}a{color:#60a5fa}.mu{color:#8b97ad}@media(prefers-color-scheme:light){body{color:#141a26;background:#f4f6fa}.mu{color:#667085}a{color:#2563eb}}</style>
+<style>:root{color-scheme:light}body{font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:760px;margin:0 auto;padding:40px 22px 80px;color:#0A0A0B;background:#F5F5F3;-webkit-font-smoothing:antialiased}h1{font-size:clamp(2rem,6vw,3rem);font-weight:500;letter-spacing:-.04em;line-height:1.05;margin:.2em 0 .3em}h2{font-size:1.15rem;font-weight:500;margin-top:34px;padding-top:18px;border-top:1px solid rgba(10,10,11,.13);letter-spacing:-.01em}a{color:inherit;text-underline-offset:3px}.mu{color:#5E6068}li{margin:.3em 0}::selection{background:#0A0A0B;color:#F5F5F3}.top{font:500 12px ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase}.top a{text-decoration:none}</style>
 </head><body>
+<p class="top"><a href="./">← Journal by myIDgod</a></p>
 <h1>Политика конфиденциальности</h1>
 <p class="mu">Journal by myIDgod · действует с 11.11.2026</p>
 <p>Journal by myIDgod — онлайн-журнал сделок для трейдеров. Здесь описано, какие данные собирает сервис, зачем и как ими можно управлять.</p>
@@ -32,8 +33,12 @@
 <h2>5. Сколько храним и как удалить</h2>
 <p>Данные хранятся, пока существует аккаунт. Вы можете в любой момент выгрузить журнал (кнопка «Резервная копия»). Чтобы удалить аккаунт и все данные, напишите администратору сервиса — удаление выполняется в течение 30 дней. Выход из аккаунта очищает данные журнала в этом браузере.</p>
 
-<h2>6. Изменения</h2>
+<h2>6. Контакт</h2>
+<p id="contact">По вопросам о данных и удалении аккаунта пишите владельцу сервиса: <a id="contact-link" href="#">связаться</a>.</p>
+
+<h2>7. Изменения</h2>
 <p>При изменении политики обновится дата вверху страницы.</p>
 
 <p><a href="./">← На главную</a> · <a href="app/">Открыть журнал</a></p>
+<script>(function(){var c=document.getElementById("contact"),a=document.getElementById("contact-link"),u;var s=document.createElement("script");s.src="supabase-config.js";s.onload=function(){u=(window.JOURNAL_SUPABASE_CONFIG||{}).contact;if(typeof u==="string"&&/^(https:\/\/|mailto:)/.test(u)){a.href=u;a.textContent=u.replace(/^mailto:/,"")}else c.hidden=true};s.onerror=function(){c.hidden=true};document.body.appendChild(s)})()</script>
 </body></html>

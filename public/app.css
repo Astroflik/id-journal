@@ -196,7 +196,7 @@ body.mono .w,body.mono .l,body.mono .b{color:#e0e0e0}
 body[data-nav-position="bottom"] .quick-actions{top:max(16px,env(safe-area-inset-top));bottom:auto}
 body[data-nav-position="right"] .quick-actions{left:max(16px,env(safe-area-inset-left));right:auto}
 body[data-nav-position="left"] .quick-actions{left:auto;right:max(16px,env(safe-area-inset-right))}
-body:not(.custom-background-active):not(.mono){background:linear-gradient(125deg,var(--gradient-a,#100b2b),var(--gradient-b,#25105c),var(--gradient-c,#071c3b),var(--gradient-a,#100b2b));background-size:320% 320%;animation:gradientShift 22s ease infinite}
+body:not(.custom-background-active):not(.mono):not(.paper){background:linear-gradient(125deg,var(--gradient-a,#100b2b),var(--gradient-b,#25105c),var(--gradient-c,#071c3b),var(--gradient-a,#100b2b));background-size:320% 320%;animation:gradientShift 22s ease infinite}
 body.mono:not(.custom-background-active){background:#080808;animation:none}
 body:not(.custom-background-active)::before{background:radial-gradient(48% 40% at 50% 45%,rgba(var(--acr),.16),transparent 75%);filter:blur(40px);opacity:.8}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
@@ -228,3 +228,30 @@ button.p:hover,button.s:hover{transform:none!important}
 .acc-banner{margin:0 0 14px;padding:9px 14px;border:1px solid var(--bd);border-radius:12px;background:var(--pn);color:var(--mu);font-size:.88rem;line-height:1.4}.acc-banner.bad{border-color:var(--l);color:var(--tx)}.acc-banner.bad b{color:var(--l)}.acc-banner a{color:var(--ac)}
 body.ro [data-w]{display:none!important}
 .md.admin-md{width:min(1180px,100%)}.admin-md td,.admin-md th{padding:6px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--bd)}.admin-md td.bad{color:var(--l)}.admin-md input{padding:6px 8px}
+
+/* ---- Paper style: white and black, same language as the landing page ---- */
+body.paper{--bg:#F5F5F3;--pn:#fff;--bd:rgba(10,10,11,.14);--tx:#0A0A0B;--mu:#5E6068;--ac:#0A0A0B;--acr:10,10,11;--w:#0A0A0B;--l:#8a8c94;--b:#5E6068;background:#F5F5F3;color:#0A0A0B;color-scheme:light;animation:none;letter-spacing:-.01em}
+body.paper::before,body.paper::after{display:none}
+body.paper h1{background:none;color:#0A0A0B;-webkit-text-fill-color:#0A0A0B;font-weight:500;letter-spacing:-.045em}
+body.paper .card,body.paper .tile,body.paper .big,body.paper .md,body.paper .tw{background:#fff;border:1px solid rgba(10,10,11,.14);border-radius:4px;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+body.paper .big:hover,body.paper .big.on{border-color:#0A0A0B;transform:none}
+body.paper .nav .big.on::after{background:#0A0A0B}
+body.paper button.p{background:#0A0A0B;color:#F5F5F3;border:1px solid #0A0A0B;border-radius:999px;box-shadow:none}
+body.paper button.s{background:transparent;color:#0A0A0B;border:1px solid #0A0A0B;border-radius:999px}
+body.paper button.s:hover{background:#0A0A0B;color:#F5F5F3}
+body.paper select,body.paper input,body.paper textarea{background:#fff;color:#0A0A0B;border-color:rgba(10,10,11,.2);border-radius:4px}
+body.paper th{color:#5E6068;border-bottom-color:#0A0A0B;font:500 11px/1.4 ui-monospace,"IBM Plex Mono",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+body.paper td,body.paper tr{border-color:rgba(10,10,11,.1)}
+body.paper tbody tr:hover{background:rgba(10,10,11,.04)}
+body.paper .w{color:#0A0A0B;font-weight:600}body.paper .l{color:#8a8c94;text-decoration:line-through;text-decoration-thickness:1px}body.paper .b{color:#5E6068}
+body.paper .tile span,body.paper .mu{color:#5E6068}
+body.paper .tile b{font-weight:500;letter-spacing:-.03em}
+body.paper .toast{background:#0A0A0B;color:#F5F5F3;border-radius:4px}
+body.paper ::selection{background:#0A0A0B;color:#F5F5F3}
+body.paper :focus-visible{outline:2px solid #0A0A0B;outline-offset:2px}
+/* ---- Motion setting: light keeps short transitions only; off removes all motion ---- */
+body.mo-light:not(.paper){animation:none}
+body.mo-light *,body.mo-light *::before,body.mo-light *::after{animation-iteration-count:1!important}
+body.mo-light .intro video{display:none}
+body.mo-off *,body.mo-off *::before,body.mo-off *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+body.mo-off .dl{stroke-dashoffset:0!important}
