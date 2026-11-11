@@ -9,9 +9,9 @@
     ['Каждая сделка. <em>Весь</em> контекст.', 'Every trade. <em>Full</em> context.'],
     ['Журнал для трейдера order flow: риск в процентах от баланса, разбор по триггерам и сетапам, синхронизация между устройствами.', 'A journal for order flow traders: risk as a percent of balance, review by triggers and setups, sync across devices.'],
     ['Войти через Google', 'Sign in with Google'], ['14 дней бесплатно, без карты', '14 days free, no card'],
-    ['Листайте, чтобы наклонить карту', 'Scroll to tilt the map'], ['Изолинии · шаг 1/6 R', 'Contours · 1/6 R step'],
+    ['Листайте: камера полетит сквозь сцену', 'Scroll: the camera flies through the scene'], ['Изолинии · шаг 1/6 R', 'Contours · 1/6 R step'],
     ['01 / Три слоя', '01 / Three layers'], ['Одна сделка — <em>три</em> слоя.', 'One trade, <em>three</em> layers.'],
-    ['Каждая запись в журнале разбирается по трём слоям. Переключайте их, и карта за этим текстом перестроится.', 'Every journal entry is read through three layers. Switch them and the map behind this text rebuilds.'],
+    ['Каждая запись в журнале разбирается по трём слоям. Переключайте их, и сцена за этим текстом перестроится.', 'Every journal entry is read through three layers. Switch them and the scene behind this text rebuilds.'],
     ['Сделки', 'Trades'], ['журнал', 'journal'], ['Вход, выход, скриншоты, заметки и оценка. Поиск и фильтры по любому полю.', 'Entry, exit, screenshots, notes and grade. Search and filters on any field.'],
     ['Риск', 'Risk'], ['% от баланса', '% of balance'], ['Результат в R и в процентах от счёта. Кривая и просадка считаются сами.', 'Result in R and as a percent of the account. Equity curve and drawdown are computed for you.'],
     ['Триггеры', 'Triggers'], ['Срезы по каждому полю показывают, какие сетапы приносят R, а какие съедают депозит.', 'Breakdowns by every field show which setups earn R and which eat the deposit.'],
@@ -30,10 +30,10 @@
     ['Journal by myIDgod использует вход через Google только чтобы определить ваш аккаунт: из данных Google сервис получает адрес почты и внутренний идентификатор. Эти данные нужны для входа, синхронизации журнала и защиты пробного периода, их не продают и не передают рекламным сетям. Подробности в <a href="privacy.html">политике конфиденциальности</a>.', 'Journal by myIDgod uses Google sign-in only to identify your account: from Google data the service receives your email address and an internal identifier. They are needed for sign-in, journal sync and trial protection, and are never sold or passed to ad networks. Details are in the <a href="privacy.html">privacy policy</a>.'],
     ['Политика конфиденциальности', 'Privacy policy'], ['Вид', 'View'], ['Высота', 'Altitude'], ['Наклон', 'Tilt'], ['Точек', 'Points'],
     ['Сделка #0417 · A+', 'Trade #0417 · A+'], ['NQ · СТОП', 'NQ · STOP'], ['Слой сделок', 'Trades layer'], ['Слой риска', 'Risk layer'], ['Слой триггеров', 'Triggers layer'],
-    ['Звук', 'Sound'], ['Журнал Journal by myIDgod, на главную', 'Journal by myIDgod, home']
+    ['ИТОГ НЕДЕЛИ', 'WEEK TOTAL'], ['+7.4R · 9 сделок', '+7.4R · 9 trades'], ['Пик', 'Peak'], ['Звук', 'Sound'], ['Журнал Journal by myIDgod, на главную', 'Journal by myIDgod, home']
   ];
   var EN = {}, RU = {}; P.forEach(function (p) { EN[p[0]] = p[1]; RU[p[1]] = p[0]; });
-  var VIEWS = { ru: ['ПЛАН', 'НАКЛОН', 'ПОЛЁТ', 'ОБЗОР'], en: ['PLAN', 'TILT', 'FLIGHT', 'OVERVIEW'] };
+  var VIEWS = { ru: ['ПИК', 'СВЕЧИ', 'ПОТОК', 'ОРБИТА'], en: ['PEAK', 'CANDLES', 'FLOW', 'ORBIT'] };
   var META = { ru: ['Journal by myIDgod — журнал сделок для order flow', 'Journal by myIDgod — онлайн-журнал сделок для трейдеров order flow: риск в процентах от баланса, разбор по триггерам, синхронизация между устройствами. 14 дней бесплатно, без карты.'],
     en: ['Journal by myIDgod — trade journal for order flow', 'Journal by myIDgod is an online trade journal for order flow traders: risk as a percent of balance, review by triggers, sync across devices. 14 days free, no card.'] };
   var cur = 'ru';
