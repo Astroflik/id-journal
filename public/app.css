@@ -382,3 +382,4 @@ body.dock-drag .nav{transform:none!important;transition:none;opacity:.92}
 body.brief-open .quick-actions{z-index:42}
 @media(min-width:761px){body.brief-open[data-nav-position="right"] .quick-actions{left:calc(var(--bw,400px) + 12px)}}
 @media(max-width:760px){body[data-nav-position="top"] .dock-grip,body[data-nav-position="bottom"] .dock-grip{position:sticky;left:0;z-index:2;background:var(--pn)}}
+.quick-actions .float{inset:auto}/* the chat button is position:relative: without this the old fixed offsets (top/right 16px) shifted it out of line */

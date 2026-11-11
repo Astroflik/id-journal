@@ -304,7 +304,7 @@ def main():
         # 3D world: tabs are stations, the camera flies to them, content is untransformed at rest
         check('world: background canvas and stations are set up', tab.evaluate("!!document.querySelector('#sky')&&!!window.World&&!Fly.on"))
         tab.evaluate("go('stats')"); tab.wait_for_timeout(180)
-        mid = tab.evaluate("[document.querySelector('#v').classList.contains('flying'),!!document.querySelector('#v').style.transform,document.querySelector('#v').hasAttribute('inert'),[...document.querySelectorAll('#v>*')].some(c=>/\s-?[1-9]\d*(\.\d+)?px$/.test(getComputedStyle(c).translate))]")
+        mid = tab.evaluate("[document.querySelector('#v').classList.contains('flying'),!!document.querySelector('#v').style.transform,document.querySelector('#v').hasAttribute('inert'),[...document.querySelectorAll('#v>*')].some(c=>/ -?[1-9][0-9]*([.][0-9]+)?px$/.test(getComputedStyle(c).translate))]")
         tab.wait_for_function("view==='stats'&&!World.flying()", timeout=4000)
         rest = tab.evaluate("(()=>{const v=document.querySelector('#v');return [v.classList.contains('flying'),v.style.transform,v.style.opacity,v.hasAttribute('inert'),World.current()]})()")
         check('world: flight projects the tab with depth for its widgets, then leaves everything untransformed', mid == [True, True, True, True] and rest == [False, '', '', False, 'stats'], [mid, rest])
@@ -321,6 +321,7 @@ def main():
         check('dock: dragging the grip to the right edge docks it there', zones == 1 and tab.evaluate("document.body.dataset.navPosition==='right'&&CFG.look.nav==='right'&&!document.querySelector('.dock-zones')"), zones)
         tab.locator('#nav .dock-grip').focus(); tab.keyboard.press('ArrowUp'); tab.wait_for_timeout(150)
         check('quick buttons: briefing button sits in the same rail as appearance and help', tab.evaluate("['#brief-toggle','.float.look','.float.h','.float.mt'].every(s=>document.querySelector('.quick-actions '+s))&&!document.body.querySelector(':scope>#brief-toggle')"))
+        check('quick buttons stand in one line', tab.evaluate("(()=>{const l=[...document.querySelectorAll('.quick-actions>button')].filter(b=>b.offsetWidth).map(b=>Math.round(b.getBoundingClientRect().left));return l.length>=4&&new Set(l).size===1})()"))
         clash = []
         for edge in ('top', 'bottom', 'left', 'right'):
             tab.evaluate("e=>{CFG.look=Object.assign({},CFG.look||{},{nav:e});applyLook()}", edge); tab.wait_for_timeout(900)
