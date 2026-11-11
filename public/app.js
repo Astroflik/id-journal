@@ -123,7 +123,7 @@ function dash(p,a,full){const w=el('div','two'),days={};a.forEach(t=>days[t.date
   const sc=a.length?Math.round((cp(s.wr*100,20,70)+cp(s.pf===Infinity?3:s.pf||0,0,3)+cp(s.avg,-.5,1)+cons*100)/4):0;
   const r=el('div','card ring');r.innerHTML='<svg viewBox="0 0 120 120"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c4b5fd"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(167,139,250,.14)" stroke-width="9"/><circle class="rg" cx="60" cy="60" r="50" fill="none" stroke="url(#rg)" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="100" style="stroke-dashoffset:'+(100-sc)+';transform:rotate(-90deg);transform-origin:center"/><text x="60" y="67" text-anchor="middle" style="font-size:30px;font-weight:700;fill:var(--tx)">'+sc+'</text></svg><div class="mu">Score<br><small>винрейт · PF · ср. R · стабильность</small></div>';
   const c=el('div','card'),o=window._mo||0,d0=new Date();d0.setDate(1);d0.setMonth(d0.getMonth()+o);const y=d0.getFullYear(),mo=d0.getMonth(),n=new Date(y,mo+1,0).getDate(),st=(d0.getDay()+6)%7,mx=Math.max(1,...dv.map(Math.abs)),hd=el('div','bar'),pv=el('button','s','‹'),nx=el('button','s','›');
-  pv.onclick=()=>{window._mo=o-1;render()};nx.onclick=()=>{window._mo=o+1;render()};hd.append(pv,el('b',null,d0.toLocaleDateString('ru',{month:'long',year:'numeric'})),nx);c.append(hd);
+  pv.onclick=()=>{window._mo=o-1;render()};nx.onclick=()=>{window._mo=o+1;render()};hd.append(pv,el('b',null,d0.toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru',{month:'long',year:'numeric'})),nx);c.append(hd);
   const g=el('div','cg');['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(x=>g.append(el('span','mu',x)));for(let i=0;i<st;i++)g.append(el('i'));
   for(let d=1;d<=n;d++){const k=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'),v=days[k],ce=el('div','cd');ce.style.cursor='pointer';ce.onclick=()=>dayScreen(k);ce.append(el('span','mu',d));if(v!==undefined){const cc=v>0?'w':v<0?'l':'b',b=el('em',cc);b.style.height=Math.max(8,Math.abs(v)/mx*34)+'px';ce.append(b,el('small',cc,fR(v)))}g.append(ce)}
   c.append(g);w.append(r,c);p.append(w);if(full)extra(p,a)}
@@ -297,7 +297,7 @@ function vSetups(p){CFG.setups=CFG.setups||[];const b=el('div','bar'),nb=el('but
 function shotsRow(a){if(!a||!a.length)return null;const d=el('div','shots');a.forEach(s=>{const im=el('img');SHOTS.bind(im,s);d.append(im)});return d}
 function dayScreen(date){modal((m,close)=>{const sh=d=>{const x=new Date(date+'T00:00');x.setDate(x.getDate()+d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
     const draw=()=>{m.replaceChildren();const pl=P.filter(x=>x.date===date),tr=T.filter(t=>t.date===date).sort((a,b)=>(a.time||'').localeCompare(b.time||'')||a.id.localeCompare(b.id)),s=stats(tr.filter(t=>R(t)!==null));
-      const hd=el('div','bar'),pv=el('button','s','‹'),nx=el('button','s','›');pv.onclick=()=>{date=sh(-1);draw()};nx.onclick=()=>{date=sh(1);draw()};hd.append(pv,el('h3',null,new Date(date+'T00:00').toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long',year:'numeric'})),nx);m.append(hd);
+      const hd=el('div','bar'),pv=el('button','s','‹'),nx=el('button','s','›');pv.onclick=()=>{date=sh(-1);draw()};nx.onclick=()=>{date=sh(1);draw()};hd.append(pv,el('h3',null,new Date(date+'T00:00').toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru',{weekday:'long',day:'numeric',month:'long',year:'numeric'})),nx);m.append(hd);
       tiles(m,[[tr.length,'сделок'],[fR(s.s),'итого R за день',sg(s.s)],[fW(s.wr),'винрейт'],[(pl[0]&&pl[0].done)||'—','итог плана']]);m.append(el('h3',null,'План и итог'));
       if(!pl.length){const b=el('button','p','＋ Добавить план на этот день');b.onclick=()=>{close();planForm({date})};m.append(b)}
       pl.forEach(q=>{const c=el('div','card'),t1=el('div',null,q.plan||'—'),t2=el('div',null,q.sum||'—');t1.style.whiteSpace=t2.style.whiteSpace='pre-wrap';c.append(el('b',null,'План'),t1,el('b',null,'Итог дня'),t2);const sw=shotsRow(q.shots);if(sw)c.append(sw);const e=el('button','s','✎ Открыть план');e.onclick=()=>{close();planForm(q)};c.append(e);m.append(c)});
@@ -338,7 +338,7 @@ async function importFile(f){try{let rows=[];const nm=f.name.toLowerCase();
   if(!out.length){toast('Новых сделок не найдено');return}
   modal((m,close)=>{m.append(el('h3',null,'Импорт: найдено '+out.length+' новых сделок'),el('div','mu','Проверь превью. После импорта открой каждую сделку и отметь факторы (🆕 — ещё не размечена). RR у тейков заполни вручную.'));table(m,['Дата','Время','Инстр.','Напр.','Вход','Выход','Результат','PnL'],out.slice(0,12).map(o=>({cells:[o.date,o.time,o.inst,o.side,o.entry,o.exit,o.res,o.pnl]})));const b=el('div','bar'),ok=el('button','p','Импортировать '+out.length);ok.onclick=async()=>{ok.disabled=true;try{for(const o of out)await store.save('trades',o);await accountApi.flush();close();toast('Импортировано: '+out.length)}catch(error){ok.disabled=false;toast('Импорт не завершён: '+error.message)}};b.append(ok);m.append(b)})}catch(e){toast('Не удалось прочитать файл: '+(e.message||e))}}
 function vReview(p){CFG.reviews=CFG.reviews||{};const st=window._rv=window._rv||{m:'week',o:0},bar=el('div','bar'),sm=el('select'),pv=el('button','s','‹'),nx=el('button','s','›');[['week','Неделя'],['month','Месяц']].forEach(([v,l])=>sm.append(new Option(l,v)));sm.value=st.m;sm.onchange=()=>{st.m=sm.value;st.o=0;render()};pv.onclick=()=>{st.o--;render()};nx.onclick=()=>{st.o++;render()};
-  const n=new Date();let a,b,key,title;if(st.m==='week'){const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()+st.o*7);a=new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()+6)%7);b=new Date(a.getFullYear(),a.getMonth(),a.getDate()+6);key='w:'+ymd(a);title='Неделя '+ymd(a)+' — '+ymd(b)}else{a=new Date(n.getFullYear(),n.getMonth()+st.o,1);b=new Date(a.getFullYear(),a.getMonth()+1,0);key='m:'+ymd(a).slice(0,7);title=a.toLocaleDateString('ru',{month:'long',year:'numeric'})}
+  const n=new Date();let a,b,key,title;if(st.m==='week'){const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()+st.o*7);a=new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()+6)%7);b=new Date(a.getFullYear(),a.getMonth(),a.getDate()+6);key='w:'+ymd(a);title='Неделя '+ymd(a)+' — '+ymd(b)}else{a=new Date(n.getFullYear(),n.getMonth()+st.o,1);b=new Date(a.getFullYear(),a.getMonth()+1,0);key='m:'+ymd(a).slice(0,7);title=a.toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru',{month:'long',year:'numeric'})}
   bar.append(sm,pv,el('b',null,title),nx);p.append(bar);const A=ymd(a),B=ymd(b),tr=cl().filter(t=>t.date>=A&&t.date<=B),all=T.filter(t=>t.date>=A&&t.date<=B),pl=P.filter(x=>x.date>=A&&x.date<=B),s=stats(tr);if(!all.length&&!pl.length)p.append(el('div','msg','За этот период записей нет.'));
   const days={};tr.forEach(t=>days[t.date]=(days[t.date]||0)+R(t));const de=Object.entries(days).sort((x,y)=>y[1]-x[1]),bd=de[0],wd=de[de.length-1],sm2=el('div','card');
   sm2.append(el('b',null,'📝 Автосводка'),el('div',null,tr.length?(st.m==='week'?'Неделя':'Месяц')+': '+tr.length+' сделок, винрейт '+fW(s.wr)+', итог '+fR(s.s)+', ср. R '+fR(s.avg)+(bd?'. Лучший день — '+bd[0]+' ('+fR(bd[1])+')':'')+(wd&&wd!==bd?', худший — '+wd[0]+' ('+fR(wd[1])+')':'')+'.':'Сделок с результатом нет.'));p.append(sm2);
@@ -497,13 +497,13 @@ const accountApi={
   },
   accessText(){
     const access=this.access;if(!access)return '';
-    const until=access.until?new Date(access.until).toLocaleDateString('ru-RU'):'';
+    const until=access.until?new Date(access.until).toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU'):'';
     return access.status==='banned'?'Аккаунт заблокирован':access.status==='admin'?'Статус: админ, без срока':access.status==='trial'?'Пробный период до '+until:access.status==='active'?'Подписка до '+until:'Доступ закончился: только просмотр и экспорт'
   },
   reasonText(){
     const a=this.access||{};
-    if(a.status==='banned')return 'Аккаунт заблокирован администратором'+(a.reason?': '+a.reason:'')+(a.until?' (до '+new Date(a.until).toLocaleDateString('ru-RU')+')':'')+'.';
-    return {denied_duplicate:'Пробный период не выдан: эта почта уже использовала пробный период.',denied_disposable:'Пробный период не выдан: одноразовые почтовые ящики не принимаются.',denied_no_email:'Пробный период не выдан: у аккаунта нет почты.',pending_review:'Пробный период ждёт одобрения администратора.',awaiting_confirmation:'Пробный период начнётся после подтверждения почты.',revoked:'Доступ отозван администратором.'}[a.trial]||(a.until?'Доступ закончился '+new Date(a.until).toLocaleDateString('ru-RU')+'.':'Доступ закончился.')
+    if(a.status==='banned')return 'Аккаунт заблокирован администратором'+(a.reason?': '+a.reason:'')+(a.until?' (до '+new Date(a.until).toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU')+')':'')+'.';
+    return {denied_duplicate:'Пробный период не выдан: эта почта уже использовала пробный период.',denied_disposable:'Пробный период не выдан: одноразовые почтовые ящики не принимаются.',denied_no_email:'Пробный период не выдан: у аккаунта нет почты.',pending_review:'Пробный период ждёт одобрения администратора.',awaiting_confirmation:'Пробный период начнётся после подтверждения почты.',revoked:'Доступ отозван администратором.'}[a.trial]||(a.until?'Доступ закончился '+new Date(a.until).toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU')+'.':'Доступ закончился.')
   },
   updateBanner(){
     let b=document.querySelector('.acc-banner');const a=this.access,show=this.user&&a&&a.status!=='admin';
@@ -720,7 +720,7 @@ const accountApi={
       const head=el('div','bar'),x=el('button','s','✕ Закрыть');x.onclick=close;head.append(el('h3',null,'Админ-панель'),x);
       const users=el('div','tw'),doms=el('div');m.append(head,el('h3',null,'Пользователи'),users,el('h3',null,'Заблокированные домены почты'),doms);
       const rpc=async(name,args)=>{const {data,error}=await this.sb.rpc(name,args);if(error)throw new Error(this.describe(error));return data};
-      const date=v=>v?new Date(v).toLocaleDateString('ru-RU'):'—';
+      const date=v=>v?new Date(v).toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU'):'—';
       const TS={granted:'выдан',awaiting_confirmation:'ждёт подтверждения почты',denied_duplicate:'отказ: ящик уже был',denied_disposable:'отказ: одноразовая почта',denied_no_email:'отказ: нет почты',pending_review:'ждёт одобрения',revoked:'отозван'};
       const act=async(b,fn)=>{b.disabled=true;try{await fn();toast('Готово');await load()}catch(e){toast('Ошибка: '+e.message)}finally{b.disabled=false}};
       const load=async()=>{
@@ -847,6 +847,10 @@ const STATIONS={home:{x:0,y:0,z:0,ry:0},plan:{x:900,y:-120,z:-2300,ry:.32},stats
     v.classList.remove('v-in');void v.offsetWidth;v.classList.add('v-in');clearTimeout(inT);inT=setTimeout(()=>v.classList.remove('v-in'),1700)};
   const lookW=applyLook;applyLook=function(){lookW();World.redraw()};
   if(window.I18N)I18N.on(()=>{render();World.redraw()});
+  /* language button: shows the language it switches to */
+  if(window.I18N){const b=el('button','s float lang');b.type='button';b.setAttribute('data-i18n-skip','');
+    const sync=()=>{const en=I18N.lang()==='en';b.textContent=en?'RU':'EN';b.title=en?'Русский':'English';b.setAttribute('aria-label',b.title);document.documentElement.lang=I18N.lang()};
+    b.onclick=()=>I18N.set(I18N.lang()==='en'?'ru':'en');sync();I18N.on(sync);quickActions.append(b)}
 })();
 coins();iconify(document.body);
 document.body.classList.add('first');setTimeout(()=>document.body.classList.remove('first'),1700);

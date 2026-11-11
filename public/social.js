@@ -192,7 +192,7 @@
           const r = el('div', 'so-row so-inv'), c = el('code', null, i.code), cp = el('button', 's', 'Копировать'), rv = el('button', 's', 'Отозвать'); cp.type = rv.type = 'button';
           cp.onclick = () => { (navigator.clipboard ? navigator.clipboard.writeText(i.code) : Promise.reject()).then(() => toast('Код скопирован'), () => toast(i.code)) };
           rv.onclick = () => busy(rv, async () => { await rpc('clan_revoke_invite', { code: i.code }); await drawInv() });
-          r.append(c, el('span', 'mu', i.uses + ' из ' + i.max_uses + ' · до ' + new Date(i.expires_at).toLocaleDateString('ru-RU')), cp, rv); list.append(r)
+          r.append(c, el('span', 'mu', i.uses + ' из ' + i.max_uses + ' · до ' + new Date(i.expires_at).toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU')), cp, rv); list.append(r)
         })
       };
       mk.onclick = () => busy(mk, async () => { await rpc('clan_create_invite', { days: +days.value || 7, max_uses: +uses.value || 10 }); await drawInv() });
@@ -250,7 +250,7 @@
     let last = 0, first = 0;
     const line = x => {
       const r = el('div', 'so-msg' + (x.mine ? ' mine' : '')); r.dataset.id = x.id;
-      const h = el('div', 'so-msg-h'); h.append(face(x.avatar_path, x.nick, 22), nickBtn(x.user_id, x.nick), el('time', 'mu', new Date(x.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })));
+      const h = el('div', 'so-msg-h'); h.append(face(x.avatar_path, x.nick, 22), nickBtn(x.user_id, x.nick), el('time', 'mu', new Date(x.created_at).toLocaleString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })));
       const del = el('button', 'so-del', '×'); del.type = 'button'; del.title = 'Удалить сообщение'; del.setAttribute('aria-label', 'Удалить сообщение');
       del.onclick = () => busy(del, async () => { await rpc('clan_delete_message', { id: x.id }); r.remove() }); if (x.mine || staff) h.append(del);
       r.append(h, el('p', null, x.body)); return r
@@ -365,7 +365,7 @@
       m.classList.add('so-md'); const h = el('div', 'bar'), x = el('button', 's', '✕ Закрыть'); x.type = 'button'; x.onclick = close; h.append(el('h3', null, 'Мои жалобы и ошибки'), x); m.append(h);
       if (!a.length) m.append(el('p', 'mu', 'Вы ещё ничего не отправляли.'));
       const ST = { open: 'на рассмотрении', resolved: 'решено', rejected: 'отклонено' };
-      a.forEach(r => { const c = el('div', 'so-card'); c.append(el('b', null, (r.kind === 'user' ? 'Жалоба на ' + (r.target_nick || '—') : 'Ошибка') + ' · ' + (CATS[r.category] || r.category)), el('div', 'mu', new Date(r.created_at).toLocaleString('ru-RU') + ' · ' + (ST[r.status] || r.status))); if (r.admin_note) c.append(el('p', null, 'Ответ админа: ' + r.admin_note)); m.append(c) })
+      a.forEach(r => { const c = el('div', 'so-card'); c.append(el('b', null, (r.kind === 'user' ? 'Жалоба на ' + (r.target_nick || '—') : 'Ошибка') + ' · ' + (CATS[r.category] || r.category)), el('div', 'mu', new Date(r.created_at).toLocaleString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU') + ' · ' + (ST[r.status] || r.status))); if (r.admin_note) c.append(el('p', null, 'Ответ админа: ' + r.admin_note)); m.append(c) })
     })
   }
 
@@ -390,7 +390,7 @@
         if (k === 3) {
           const a = await rpc('admin_bans'); body.replaceChildren(); if (!a.length) body.append(el('p', 'mu', 'Блокировок нет.'));
           a.forEach(b => { const c = el('div', 'so-card'), u = el('button', 's', 'Разблокировать'); u.type = 'button'; u.onclick = () => busy(u, async () => { await rpc('admin_unban', { target: b.user_id }); toast('Разблокирован'); show(3) });
-            c.append(el('b', null, (b.nick || '—') + ' · ' + (b.email || '')), el('div', 'mu', (b.active ? 'действует' : 'истекла') + (b.until ? ' · до ' + new Date(b.until).toLocaleString('ru-RU') : ' · бессрочно')), el('p', null, b.reason), u); body.append(c) });
+            c.append(el('b', null, (b.nick || '—') + ' · ' + (b.email || '')), el('div', 'mu', (b.active ? 'действует' : 'истекла') + (b.until ? ' · до ' + new Date(b.until).toLocaleString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU') : ' · бессрочно')), el('p', null, b.reason), u); body.append(c) });
           return
         }
         const all = await rpc('admin_reports', { status: k === 2 ? 'all' : 'open', lim: 200 });
@@ -398,7 +398,7 @@
         body.replaceChildren(); if (!a.length) body.append(el('p', 'mu', 'Пусто.'));
         for (const r of a) {
           const c = el('div', 'so-card so-rep');
-          const who = el('div', 'so-row'); who.append(el('b', null, CATS[r.category] || r.category), el('span', 'mu', '#' + r.id + ' · ' + new Date(r.created_at).toLocaleString('ru-RU') + ' · ' + ST[r.status]));
+          const who = el('div', 'so-row'); who.append(el('b', null, CATS[r.category] || r.category), el('span', 'mu', '#' + r.id + ' · ' + new Date(r.created_at).toLocaleString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru-RU') + ' · ' + ST[r.status]));
           c.append(who, el('div', 'mu', 'От: ' + (r.reporter_nick || '—') + ' (' + (r.reporter_email || '—') + ')'));
           if (r.target) { const t = el('div', 'so-row'); t.append(el('span', 'mu', 'На: '), nickBtn(r.target, r.target_nick || r.target_email), el('span', 'mu', '· жалоб на него: ' + r.target_reports + (r.target_banned ? ' · заблокирован' : ''))); c.append(t) }
           if (r.page) c.append(el('div', 'mu', 'Экран: ' + r.page));

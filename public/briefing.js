@@ -14,7 +14,7 @@
   };
   const kyivToday = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Kyiv' }).format(new Date());
   const fmtTime = iso => {
-    try { return new Date(iso).toLocaleString('ru', { timeZone: 'Europe/Kyiv', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); }
+    try { return new Date(iso).toLocaleString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru', { timeZone: 'Europe/Kyiv', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); }
     catch { return iso || ''; }
   };
   const getJSON = async name => {
@@ -36,7 +36,7 @@
   };
   const safeUrl = u => { try { const x = new URL(u); return x.protocol === 'https:' || x.protocol === 'http:' ? x.href : ''; } catch { return ''; } };
   const dateRu = d => {
-    try { const t = new Date(d + 'T12:00:00').toLocaleDateString('ru', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); }
+    try { const t = new Date(d + 'T12:00:00').toLocaleDateString((window.I18N&&I18N.lang()==='en')?'en-GB':'ru', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); }
     catch { return d; }
   };
   const headlineOf = b => {
@@ -300,13 +300,19 @@
     const saved = parseInt(localStorage.getItem(W_KEY), 10);
     setW(saved >= 300 && saved <= 720 ? saved : 400);
 
-    let loaded = false;
+    let loaded = false, raw = null;
+    // English text of the briefing itself: the agent that writes the JSON may add an "en" object with the same
+    // structure (only the fields it translated); in English mode it is merged over the Russian original.
+    const merge = (a, b) => { if (Array.isArray(b)) return b; if (b && typeof b === 'object') { const o = Object.assign({}, a); for (const k in b) o[k] = merge(a && a[k], b[k]); return o } return b };
+    const localize = b => (b && b.en && window.I18N && I18N.lang() === 'en') ? merge(b, b.en) : b;
+    if (window.I18N) I18N.on(() => { if (loaded && raw) renderBriefing(body, localize(raw.latest), raw.history) });
     const load = async () => {
       body.replaceChildren(h('p', 'mu', 'Загружаю…'));
       let latest = null, history = [];
       try { latest = await getJSON('latest.json'); } catch (e) { latest = null; }
       try { history = await getJSON('history.json'); } catch (e) { history = []; }
-      renderBriefing(body, latest, history);
+      raw = { latest, history };
+      renderBriefing(body, localize(latest), history);
       loaded = true;
     };
     const setOpen = open => {
