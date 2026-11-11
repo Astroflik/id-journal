@@ -1,7 +1,9 @@
 
 const FIELDS=[['res','Результат',['Тейк','BE','Стоп']],['kind','Тип',['Реверс','Продолжение']],['rr','RR (итог, для тейка)','num'],['risk','Риск %',['0.15','0.25','0.5','0.75','1']],['cvd','CVD',['Buy Exhaustion','Buy Absorption','Sell Exhaustion','Sell Absorption']],['tape','Speed of Tape',['On','Off']],['poc','Footprint: POC',['Тело','Тень']],['zero','Footprint: Zero',['Нет','Сверху','Снизу']],['ivb','IVB',['Нет','0','0.5','1']],['ivbtf','IVB диапазон',['5m','30m']],['vp','Профиль RTH',['D','P','b','B']],['origin','Набрана от',['VAH','VAL','POC']],['node','LVN / HVN',['LVN','HVN']],['side','Направление',['Long','Short']],['entry','Цена входа','num'],['exit','Цена выхода','num'],['time','Время входа','time'],['grade','Оценка сделки',['A+','A','B','C']],['emo','Состояние',['Спокойно','Уверенно','FOMO','Страх','Злость','Усталость']]];
 const INST=['NQ','ES'],BAL={fp:25000,iq:50000},$=s=>document.querySelector(s);
-const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+// Buttons that change journal data; hidden in read-only mode (body.ro).
+const WRITE_BTN=/^(＋ (Сделка|Новый|Новое|Добавить|Условие|Счёт)|Сохранить|💾 Сохранить как|Удалить|⬆ Импорт|Импортировать|✎ Править|Копия|⚙ )/;
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null){e.textContent=x;if(t==='button'&&WRITE_BTN.test(x))e.dataset.w=''}return e};
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const num=v=>{const n=parseFloat(String(v??'').replace(',','.'));return isFinite(n)?n:null};
 let T=[],P=[],view='home',db=null,assets=null,ready=false;
@@ -490,8 +492,27 @@ const accountApi={
     const until=access.until?new Date(access.until).toLocaleDateString('ru-RU'):'';
     return access.status==='admin'?'Статус: админ, без срока':access.status==='trial'?'Пробный период до '+until:access.status==='active'?'Подписка до '+until:'Доступ закончился: только просмотр и экспорт'
   },
+  reasonText(){
+    const a=this.access||{};
+    return {denied_duplicate:'Пробный период не выдан: эта почта уже использовала пробный период.',denied_disposable:'Пробный период не выдан: одноразовые почтовые ящики не принимаются.',denied_no_email:'Пробный период не выдан: у аккаунта нет почты.',pending_review:'Пробный период ждёт одобрения администратора.',awaiting_confirmation:'Пробный период начнётся после подтверждения почты.',revoked:'Доступ отозван администратором.'}[a.trial]||(a.until?'Доступ закончился '+new Date(a.until).toLocaleDateString('ru-RU')+'.':'Доступ закончился.')
+  },
+  updateBanner(){
+    let b=document.querySelector('.acc-banner');const a=this.access,show=this.user&&a&&a.status!=='admin';
+    document.body.classList.toggle('ro',!!(this.user&&this.readOnly));
+    if(!show){if(b)b.remove();return}
+    if(!b){b=el('div','acc-banner');b.setAttribute('role','status');const nav=$('#nav');if(nav)nav.after(b);else return}
+    b.replaceChildren();b.classList.toggle('bad',!!this.readOnly);
+    if(this.readOnly){
+      const c=(this.supabaseConfig()||{}).contact;
+      b.append(el('b',null,this.reasonText()+' '),document.createTextNode('Журнал открыт только для просмотра и экспорта. Чтобы получить доступ, напиши '));
+      if(typeof c==='string'&&/^https:\/\//.test(c)){const l=el('a',null,'администратору');l.href=c;l.target='_blank';l.rel='noopener';b.append(l,'.')}else b.append('администратору.')
+    }else{
+      const days=a.until?Math.ceil((new Date(a.until)-Date.now())/864e5):null;
+      b.append(this.accessText()+(days!=null&&days>=0?' · осталось '+days+' '+(days%10===1&&days%100!==11?'день':days%10>=2&&days%10<=4&&(days%100<10||days%100>=20)?'дня':'дней'):''))
+    }
+  },
   setReadOnly(){
-    this.readOnly=true;this.enabled=false;clearTimeout(this.syncTimer);this.syncTimer=null;this.access={status:'expired',until:this.access&&this.access.until||null};
+    this.readOnly=true;this.enabled=false;clearTimeout(this.syncTimer);this.syncTimer=null;this.access={status:'expired',until:this.access&&this.access.until||null,trial:this.access&&this.access.trial};this.updateBanner();
     if(this._rawRemove)this._rawRemove.call(localStorage,'jdirty');
     if(!this.readOnlyShown){this.readOnlyShown=true;toast(this.READ_ONLY)}
   },
@@ -590,6 +611,7 @@ const accountApi={
   },
   updateNav(){
     const nav=$('#nav');if(!nav)return;
+    this.updateBanner();
     const old=nav.querySelector('.account-nav');if(old)old.remove();
     if(!this.user)return;
     const button=el('button','big account-nav');button.type='button';button.title='Аккаунт · '+this.user.email;button.setAttribute('aria-label','Аккаунт · '+this.user.email);
@@ -649,7 +671,7 @@ const accountApi={
     modal((m,close)=>{
       m.closest('.ov').classList.add('auth-modal');
       m.append(el('h3',null,'Аккаунт'),el('div','mu',this.user.email));
-      const status=this.accessText();if(status)m.append(el('div','mu',status));
+      const status=this.accessText();if(status)m.append(el('div','mu',status));if(this.readOnly)m.append(el('div','mu',this.reasonText()));
       const logout=el('button','s','Выйти из аккаунта');logout.onclick=async()=>{
         logout.disabled=true;
         try{clearTimeout(this.syncTimer);if(this.enabled)await this.sync();if(this.cloud){const {error}=await this.sb.auth.signOut({scope:'local'});if(error)console.warn('Sign-out request failed:',error.message)}else await this.request('/api/logout',{method:'POST',body:'{}'});this.enabled=false;this.user=null;this.rev=0;this.base=null;this.access=null;this.readOnly=false;this.readOnlyShown=false;this.applying=true;localStorage.clear();this.applying=false;T=[];P=[];CFG={accts:[{id:'fp',name:'FundingPips',bal:25000,dd:10,dl:5,tg:8},{id:'iq',name:'IQcapital',bal:50000,dd:10,dl:5,tg:8}]};applyLook();close();render();document.body.classList.add('pre');intro()}

@@ -225,3 +225,5 @@ button.p:hover,button.s:hover{transform:none!important}
 @keyframes idHaloIn{from{opacity:0;transform:scale(.9)}to{opacity:.5;transform:scale(1)}}
 @keyframes idFloat{50%{transform:translateY(-5px)}}
 @media(prefers-reduced-motion:reduce){.id-logo,.id-logo *{animation:none!important;opacity:1!important;filter:none!important;transform:none!important;stroke-dashoffset:0!important}}
+.acc-banner{margin:0 0 14px;padding:9px 14px;border:1px solid var(--bd);border-radius:12px;background:var(--pn);color:var(--mu);font-size:.88rem;line-height:1.4}.acc-banner.bad{border-color:var(--l);color:var(--tx)}.acc-banner.bad b{color:var(--l)}.acc-banner a{color:var(--ac)}
+body.ro [data-w]{display:none!important}

@@ -88,6 +88,8 @@ def main():
         check('device is marked with its owner', page.evaluate("localStorage.getItem('jowner')") == 'uid-1')
         check('backup snapshot has no session token', not any(k.startswith('sb-') for k in page.evaluate('Object.keys(accountApi.snapshot())')))
         check('access status is read', page.evaluate('accountApi.access.status') == 'trial')
+        check('banner shows trial end date', page.locator('.acc-banner', has_text='Пробный период до 25.11.2026').count() == 1)
+        check('trial: write buttons visible', page.evaluate("(()=>{const b=el('button','p','＋ Сделка 1');document.body.append(b);const v=getComputedStyle(b).display!=='none';b.remove();return v})()"))
 
         # 2. ordinary save bumps rev and clears the dirty flag
         page.evaluate("store.save('trades',{id:'B',date:'2026-11-11',res:'Стоп'},true)")
@@ -153,6 +155,12 @@ def main():
         boot(page)
         check('expired at startup: journal opens read-only with data', page.evaluate('accountApi.readOnly') and len(page.evaluate('T')) >= 5)
         check('expired: export snapshot still works', 'jt' in page.evaluate('accountApi.snapshot()'))
+        check('expired: banner explains read-only', page.locator('.acc-banner.bad', has_text='только для просмотра').count() == 1)
+        hidden = page.evaluate("(()=>['＋ Сделка 1','Сохранить','Удалить','⬆ Импорт MT5 / ATAS','✎ Править','⬇ Резервная копия (JSON)'].map(t=>{const b=el('button','s',t);document.body.append(b);const h=getComputedStyle(b).display==='none';b.remove();return h}))()")
+        check('expired: write buttons hidden, export stays', hidden == [True, True, True, True, True, False], hidden)
+        d = db(page); d['access'] = {'status': 'expired', 'until': None, 'trial': 'denied_duplicate'}; set_db(page, d)
+        boot(page)
+        check('expired: banner gives the reason', page.locator('.acc-banner', has_text='уже использовала пробный период').count() == 1)
         page.evaluate('accountApi.openProfile()')
         check('expired: profile says so', page.locator('.auth-modal', has_text='Доступ закончился').count() == 1)
         page.context.close()
