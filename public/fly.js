@@ -14,10 +14,21 @@
   function frame(now){raf=0;if(!on)return;var vh=innerHeight,vw=innerWidth,maxY=document.documentElement.scrollHeight-vh,atEnd=scrollY>=maxY-2,busy=false;
     (io?near:items).forEach(function(e){if(!e.isConnected){forget(e);return}
       var p,x,ty=0,side=e._side;
-      if(e._pin){var s=e._sec.getBoundingClientRect(),q=(vh-s.top)/(s.height+vh),top=s.top+e._off,h=e._h,want=h>vh*.9?vh*.05:(vh-h)/2;
-        /* enter q .06-.34, hold to .64, leave by .92 */
-        p=outC(clamp((q-.06)/.28));x=inC(clamp((q-.64)/.28));ty=want-top;
-        if(q<=0||q>=1){p=q<=0?0:1;x=q>=1?1:0}
+      if(e._pin){
+        /* landing panel: a 3D slab that comes from behind the viewer's shoulder, passes in front of the camera
+           in slow motion, holds for a moment and then accelerates away into the distance, turning on every axis */
+        var s=e._sec.getBoundingClientRect(),q=(vh-s.top)/(s.height+vh),top=s.top+e._off,h=e._h,want=h>vh*.9?vh*.05:(vh-h)/2,sd=side||-1;
+        var X=0,Y=0,Z=0,RX=0,RY=0,RZ=0,op=1,bl=0;
+        if(q<.42){var u=clamp((q-.03)/.39),k=1-Math.pow(1-u,5);           /* fast at first, slow motion near the camera */
+          Z=1500*(1-k);X=sd*24*(1-k);Y=26*(1-k);RY=-sd*40*(1-k);RX=26*(1-k);RZ=-sd*16*(1-k);
+          op=clamp((990-Z)/260);bl=Z>260?Math.min(7,(Z-260)/90):0}
+        else if(q<.62){var hq=(q-.42)/.2;Z=-40*hq;RY=sd*4*Math.sin(hq*Math.PI);RX=-3*hq;RZ=sd*1.2*Math.sin(hq*Math.PI)}
+        else{var w=clamp((q-.62)/.35),a=w*w*w;                              /* accelerating away */
+          Z=-40-3400*a;X=-sd*20*a;Y=-16*a;RY=sd*52*a;RX=-34*a;RZ=sd*22*a;op=1-clamp((w-.55)/.45);bl=a*3}
+        e.style.transition='none';e.style.willChange='transform,opacity';
+        e.style.transform='perspective(1000px) translate3d(0,'+(want-top).toFixed(1)+'px,0) translate3d('+X.toFixed(2)+'vw,'+Y.toFixed(2)+'vh,'+Z.toFixed(0)+'px) rotateX('+RX.toFixed(2)+'deg) rotateY('+RY.toFixed(2)+'deg) rotateZ('+RZ.toFixed(2)+'deg)';
+        e.style.opacity=op.toFixed(3);e.style.filter=bl>.05?'blur('+bl.toFixed(1)+'px)':'';
+        e.classList.toggle('fly-hold',q>=.42&&q<.62);e._dirty=1;return
       }else{var r=e.getBoundingClientRect(),h2=r.height;
         /* untransformed edges are close enough: the transform is mostly depth */
         p=outC(clamp((vh-r.top)/(vh*.2)));x=inC(clamp(1-(r.bottom)/(vh*.24)));if(atEnd)p=1;

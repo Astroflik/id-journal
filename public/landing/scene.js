@@ -60,7 +60,7 @@
         while (got < cnt && tr < cnt * 14) {
           tr++; var z = zs - rnd() * 2.5, x = cx(z) + (rnd() < .5 ? -1 : 1) * 12.5 * Math.pow(rnd(), 1.5), h = H(x, z), t = h * L;
           var sh = min(1, max(0, .42 + (H(x + .17, z + .22) - h) * 3.2));   // light from +x+z: slopes facing away are darker
-          if (abs(t - Math.round(t)) < .085 || rnd() < .03 + .2 * sh * sh) { add(x, h, z, 0, sh); got++; }
+          if (abs(t - Math.round(t)) < .07 || rnd() < .42) { add(x, h, z, 0, sh); got++; }   // lidar: even cover, contour band kept whole
         }
       });
     });
@@ -75,8 +75,8 @@
       for (i = 0; i < nx; i++) {
         var dx = -12.5 + i * STP, x = c0 + dx, h = H(x, z), gx = (H(x + .12, z) - H(x - .12, z)) / .24, gz = (H(x, z + .12) - h) / .12;
         var nl = Math.hypot(gx, 1, gz), lit = (-gx * Lx + Ly - gz * Lz) / nl;
-        var g = .79 - .26 * (1 - sm(.25, .95, lit)) - .05 * sm(1.5, 0, h);
-        g -= .27 * (1 - sm(.35, 1.6, abs(dx)));                                   // the trail
+        var g = SKY - .035 * (1 - sm(.25, .95, lit)) - .02 * sm(1.5, 0, h);
+        g -= .1 * (1 - sm(.35, 1.6, abs(dx)));                                   // the trail
         g = g + (SKY - g) * sm(8.5, 12.4, abs(dx));
         V[o++] = x; V[o++] = h; V[o++] = z; V[o++] = g;
       }
@@ -271,7 +271,7 @@
   var VS = 'attribute vec4 p;uniform mat4 m;uniform vec4 u0,u1,u2,u3;uniform vec3 lay,sc,eye;varying float a;' +
     'float cxf(float z){return 1.6*sin(z*.085)+.7*sin(z*.19+1.3);}float cyf(float z){return 1.7+.35*sin(z*.13);}' +
     'void main(){float k=floor(p.w),sd=fract(p.w);vec3 q=p.xyz;float al=0.,sz=1.;' +
-    'if(k<.5){float tt=q.y*u0.y;float ix=floor(tt+.5);float d=abs(tt-ix);float mj=step(mod(ix+400.,4.),.5);float ln=(1.-smoothstep(0.,.05+.035*mj,d))*(.15+.85*lay.y);al=(.05+.5*sd*sd)*(.3+.7*lay.x)+(.7+.3*mj)*ln;sz=.85+.25*sd+(.7+.5*mj)*ln;}' +
+    'if(k<.5){float tt=q.y*u0.y;float ix=floor(tt+.5);float d=abs(tt-ix);float mj=step(mod(ix+400.,4.),.5);float ln=(1.-smoothstep(0.,.05+.035*mj,d))*(.15+.85*lay.y);float sw=mod(u0.z*5.5,140.)-110.;float sn=exp(-pow((q.z-sw)/1.6,2.));al=(.2+.42*sd*sd)*(.3+.7*lay.x)+(.75+.25*mj)*ln+.45*sn;sz=.8+.25*sd+(.8+.6*mj)*ln+.6*sn;}' +
     'else if(k<1.5){al=(.3+.6*sd)*(.15+.85*lay.x);}' +
     'else if(k<2.5){float sp=.7+.6*fract(q.x*3.7);float u=fract(q.z+u0.w*.011*sp);float z=-96.+u*110.;float th=q.x+z*.3;' +
     'q=vec3(cxf(z)+q.y*cos(th),cyf(z)-.45+abs(q.y*sin(th))*.75,z);al=(.12+.8*sd)*(.08+.92*lay.z)*smoothstep(0.,.03,u)*(1.-smoothstep(.97,1.,u));sz=.7+.7*sd;}' +
