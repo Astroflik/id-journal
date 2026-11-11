@@ -47,6 +47,9 @@ account endpoints, and persistent account data from the same origin.
   there.
 - `public/vendor/supabase.js` is the unmodified browser build of
   `@supabase/supabase-js` (version and checksum in `deploy/supabase.md`).
+- `supabase/migrations/` is the database schema in the order it was applied
+  (accounts, trial, subscriptions, admin functions, trial abuse protection).
+  `tests/db/run.sh` applies it to a throwaway local Postgres 16 and checks it.
 - `tests/sync_smoke.py` checks sign-in, sync, merge, read-only mode and
   screenshots in headless Chrome with a fake backend: `python3 tests/sync_smoke.py`.
 

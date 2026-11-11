@@ -33,6 +33,20 @@ live in a Supabase project; the browser talks to it directly.
 - The sign-in session is stored in the browser under keys starting with `sb-`.
   The app never syncs, exports or wipes those together with journal data.
 
+## Trial rules (migration 0002)
+
+- One free trial per mailbox. Gmail dots and `+tags` count as the same
+  mailbox, and the mailbox is remembered after the account is deleted.
+- No trial for disposable mail domains (`blocked_domains`, managed by the
+  admin) or for accounts without an email.
+- An email/password account starts its trial when the email is confirmed.
+- `register_device(hash)`: the site may send a hash of browser traits after
+  sign-in. A second trial from the same browser is put on hold
+  (`pending_review`) until the admin approves it. It is a signal, not a ban,
+  and must be mentioned in the privacy policy once the site sends it.
+- `my_access()` returns `trial` with the reason when there is no trial.
+- IP addresses are not used for any of this.
+
 ## After moving the site to another address
 
 Add the new address to Redirect URLs (and set it as Site URL) in Supabase, and
