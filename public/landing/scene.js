@@ -111,6 +111,7 @@
   if (hud.n) hud.n.textContent = N.toLocaleString('ru-RU');
   var layers = W.landingLayers || { dots: 1, lines: 1, pins: 1 }, lay = { dots: 1, lines: 1, pins: 1 };
   W.addEventListener('landing:layers', function () { layers = W.landingLayers || layers; kick(); });
+  W.addEventListener('landing:lang', function () { hudLast = ''; kick(); });
 
   // ---- render loop ----
   var cur = reduce ? 1 : scrollP(), mx = 0, my = 0, tmx = 0, tmy = 0, running = false, last = 0, visible = true, n = N, level = 0, acc = 0, cnt = 0, shown = false, T0 = performance.now();
@@ -147,7 +148,7 @@
       pin.el.style.transform = 'translate3d(' + sx.toFixed(1) + 'px,' + sy.toFixed(1) + 'px,0)';
       if (o !== pin.o) { pin.el.style.opacity = o; pin.o = o; }
     });
-    var dir = norm(sub(tg, e)), s = VIEW[Math.min(3, Math.round(cur))] + '|' + Math.round(e[1] * 40) + ' М|' + (Math.asin(-dir[1]) * 180 / Math.PI).toFixed(1) + '°';
+    var dir = norm(sub(tg, e)), s = (W.LANDING_VIEW || VIEW)[Math.min(3, Math.round(cur))] + '|' + Math.round(e[1] * 40) + (W.LANDING_UNIT || ' М') + '|' + (Math.asin(-dir[1]) * 180 / Math.PI).toFixed(1) + '°';
     if (s !== hudLast && hud.v) { var q = s.split('|'); hud.v.textContent = q[0]; hud.a.textContent = q[1]; hud.t.textContent = q[2]; hudLast = s; }
     if (!shown) { shown = true; root.classList.add('scene-on'); }
   }
