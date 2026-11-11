@@ -38,7 +38,7 @@ select,input,textarea{background:rgba(5,4,9,.55);border-radius:12px;transition:b
 th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}tbody tr{transition:background .25s}tbody tr:hover{background:rgba(139,92,246,.14)}.tile b{letter-spacing:-.03em}
 .tile{transition:transform .4s var(--spring)}.tile:hover{transform:translateY(-2px)}
 .dl{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.6s var(--ease) .15s forwards;filter:drop-shadow(0 0 7px currentColor)}
-#v.anim>*{animation:rise .7s var(--ease) both}#v.anim .tile{animation:rise .7s var(--ease) both;animation-delay:calc(var(--i,0)*55ms)}#v.anim tbody tr{animation:rise .6s var(--ease) both;animation-delay:calc(var(--i,0)*28ms)}
+
 .first .big{animation:navFade .35s ease both;animation-delay:calc(var(--i,0)*40ms)}
 .ov{animation:fade .3s ease;background:rgba(3,2,8,.72);backdrop-filter:blur(8px)}.md{animation:pop .55s var(--spring)}
 .two{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:12px}@media(max-width:760px){.two{grid-template-columns:1fr}}
@@ -87,7 +87,7 @@ select:focus,input:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 
 .q{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:6px;border-radius:50%;font:700 10px/1 system-ui,sans-serif;font-style:normal;background:rgba(167,139,250,.2);color:var(--ac);cursor:help;border:1px solid rgba(167,139,250,.4);vertical-align:middle;text-transform:none;letter-spacing:0}.q:hover{background:var(--ac);color:#fff}
 .tipbox{position:fixed;display:none;z-index:60;max-width:260px;background:rgba(18,12,34,.97);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;font-size:.82rem;line-height:1.4;box-shadow:0 14px 40px -10px #000;pointer-events:none}
 .tr-ring{position:fixed;width:60px;height:60px;border-radius:50%;border:2px solid rgba(196,181,253,.9);box-shadow:0 0 40px 8px rgba(139,92,246,.6),inset 0 0 30px rgba(139,92,246,.4);z-index:60;pointer-events:none}.tr-wash{position:fixed;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.55),transparent 65%);z-index:59;pointer-events:none;mix-blend-mode:screen}
-#v.anim>*{animation-delay:.12s}.float.h{right:68px}
+.float.h{right:68px}
 :root{--acr:139,92,246}:root:root:root{--bd:rgba(var(--acr),.22)}
 body::before{background:radial-gradient(40% 35% at 20% 15%,rgba(var(--acr),.34),transparent 70%),radial-gradient(35% 30% at 85% 10%,rgba(var(--acr),.2),transparent 70%),radial-gradient(40% 40% at 60% 100%,rgba(var(--acr),.3),transparent 70%)}
 h1{padding-right:.12em}.ico{display:inline-flex;vertical-align:-.2em;line-height:0;margin-right:.4em}.ico svg{width:1.15em;height:1.15em}button .ico:only-child,.big i .ico,.gi .ico{margin:0}.big i .ico svg{width:30px;height:30px}.gi .ico svg{width:54px;height:54px}.ico.dotg,.ico.okc{color:var(--w)}.ico.dotr,.ico.xc{color:var(--l)}
@@ -141,7 +141,7 @@ body.tb h1,body.tb h3{font-weight:800}body.tb .tile b.w{display:inline-block;bac
 .start .sc .bt+.bt{animation-delay:1.72s}
 .start .sc .logo-wrap{margin-bottom:2px}
 .home-watermark{position:absolute;z-index:-1;top:8%;right:5%;width:min(260px,48vw);opacity:.04;pointer-events:none;filter:grayscale(1)}
-#v.anim>.home-watermark{animation:none!important;opacity:.04!important}
+
 .home-watermark .logo{animation:none;filter:none}
 .home-watermark .letter,.home-watermark .spark,.home-watermark .orbit{animation:none;opacity:1;stroke-dashoffset:0}
 .custom-background{position:fixed;inset:0;z-index:0;pointer-events:none;background-position:center;background-repeat:no-repeat;background-size:cover}
@@ -348,7 +348,10 @@ body.night{--wink:214,213,208}
 #sky{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
 #sky[hidden],body.perf #sky,body.custom-background-active #sky{display:none}
 #v{transition:none}
-#v.flying{pointer-events:none;will-change:transform,opacity;backface-visibility:hidden}
+#v.flying{pointer-events:none;will-change:transform;backface-visibility:hidden;transform-style:preserve-3d}
+/* depth: while the camera flies, direct children sit at different distances (--wk = 0..1..0 over the flight, set by World) */
+#v.flying>*{opacity:var(--wo,1);translate:0 0 calc(var(--wk,0)*var(--wz,0)*1px)}
+#v.flying>:nth-child(4n+1){--wz:-50}#v.flying>:nth-child(4n+2){--wz:90}#v.flying>:nth-child(4n+3){--wz:190}#v.flying>:nth-child(4n){--wz:30}
 /* tab bar: one solid panel, no glass; the grip docks it to any edge */
 .nav{background:var(--pn);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 1px 0 rgba(var(--wink),.04),0 18px 40px -22px rgba(0,0,0,.55)}
 body.paper .nav{box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 16px 36px -24px rgba(10,10,11,.38)}
@@ -373,3 +376,9 @@ body.dock-drag .nav{transform:none!important;transition:none;opacity:.92}
 .dock-zones i[data-e=left]{top:22%;bottom:22%;left:8px;width:64px}
 .dock-zones i[data-e=right]{top:22%;bottom:22%;right:8px;width:64px}
 @media (prefers-reduced-motion:reduce){.dock-zones i{transition:none}}
+
+
+/* ---- phase 2: the briefing button lives in the quick-button rail; with the drawer open the rail stays reachable ---- */
+body.brief-open .quick-actions{z-index:42}
+@media(min-width:761px){body.brief-open[data-nav-position="right"] .quick-actions{left:calc(var(--bw,400px) + 12px)}}
+@media(max-width:760px){body[data-nav-position="top"] .dock-grip,body[data-nav-position="bottom"] .dock-grip{position:sticky;left:0;z-index:2;background:var(--pn)}}

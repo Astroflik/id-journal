@@ -280,7 +280,7 @@
     if (document.getElementById('brief')) return;
     const panel = h('aside'); panel.id = 'brief'; panel.setAttribute('aria-label', 'Брифинг');
     const grip = h('div'); grip.id = 'brief-grip'; grip.title = 'Потяни, чтобы изменить ширину';
-    const head = h('div', 'bh'); head.append(h('b', null, '📰 Брифинг · NQ'));
+    const head = h('div', 'bh'); head.append(h('b', null, 'Брифинг · NQ'));
     const refresh = h('button', 's', '⟳'); refresh.title = 'Обновить'; refresh.type = 'button';
     const close = h('button', 's', '✕'); close.title = 'Закрыть'; close.type = 'button';
     head.append(refresh, close);
@@ -292,8 +292,9 @@
     panel.append(grip, head, body, foot);
     document.body.append(panel);
 
-    const toggle = h('button', 's', '📰'); toggle.id = 'brief-toggle'; toggle.type = 'button'; toggle.title = 'Брифинг'; toggle.setAttribute('aria-label', 'Открыть брифинг');
-    document.body.append(toggle);
+    const toggle = h('button', 's float brief'); toggle.id = 'brief-toggle';
+    toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h12v14H6a2 2 0 0 1-2-2z"/><path d="M16 9h4v8a2 2 0 0 1-2 2h-2"/><path d="M7.5 9h5M7.5 12.5h5M7.5 16h3"/></svg>'; toggle.type = 'button'; toggle.title = 'Брифинг'; toggle.setAttribute('aria-label', 'Открыть брифинг');
+    const rail = document.querySelector('.quick-actions'); if (rail) rail.prepend(toggle); else document.body.append(toggle);  // one family of quick buttons
 
     const setW = w => document.documentElement.style.setProperty('--bw', Math.round(w) + 'px');
     const saved = parseInt(localStorage.getItem(W_KEY), 10);
@@ -310,6 +311,7 @@
     };
     const setOpen = open => {
       document.body.classList.toggle('brief-open', open);
+      toggle.classList.toggle('on', open); toggle.setAttribute('aria-pressed', String(open));
       try { localStorage.setItem(OPEN_KEY, open ? '1' : '0'); } catch (e) { /* ignore */ }
       if (open && !loaded) load();
     };

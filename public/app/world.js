@@ -23,11 +23,12 @@
   function origin(){if(!content)return;content.style.transform='';var r=content.getBoundingClientRect();content.style.transformOrigin=(W/2-r.left)+'px '+(H/2-r.top)+'px'}
   function place(c){
     if(!content||!shown||!ST[shown])return;var s=ST[shown],v=view(center(s),c),z=v.z+P,d=Math.sqrt(v.x*v.x+v.y*v.y+z*z);
-    if(z>P*.82){content.style.opacity='0';return}
+    /* opacity goes to the children (--wo): opacity on the container itself would flatten their depth */
+    if(z>P*.82){content.style.setProperty('--wo','0');return}
     content.style.transform='perspective('+P+'px) translate3d('+v.x.toFixed(1)+'px,'+v.y.toFixed(1)+'px,'+z.toFixed(1)+'px) rotateY('+wrapA(s.ry-c.ry).toFixed(4)+'rad)';
-    content.style.opacity=String(clamp(1-d/(2.4*P),0,1).toFixed(3));
+    content.style.setProperty('--wo',clamp(1-d/(2.4*P),0,1).toFixed(3));
   }
-  function rest(){if(!content)return;content.classList.remove('flying');content.style.transform='';content.style.opacity='';content.style.transformOrigin='';content.removeAttribute('inert')}
+  function rest(){if(!content)return;content.classList.remove('flying');content.style.transform='';content.style.opacity='';content.style.removeProperty('--wo');content.style.removeProperty('--wk');content.style.transformOrigin='';content.removeAttribute('inert')}
 
   /* ---------- background: stations as viewfinder frames, contour islands, dust ---------- */
   function rand(i){var x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)}
@@ -81,7 +82,7 @@
       var f=flight,t=clamp((now-f.t0)/f.dur,0,1),e=ease(t),b=Math.sin(Math.PI*t),ry=f.from.ry+wrapA(f.to.ry-f.from.ry)*e,back=rot({x:0,y:0,z:1},ry);
       cam={x:f.from.x+(f.to.x-f.from.x)*e+back.x*f.pull*b,y:f.from.y+(f.to.y-f.from.y)*e-f.arc*b,z:f.from.z+(f.to.z-f.from.z)*e+back.z*f.pull*b,ry:ry};
       if(!f.swapped&&t>=.5){f.swapped=true;content.style.transform='';try{f.swap&&f.swap()}catch(err){console.error(err)}shown=f.k;origin()}
-      place(cam);draw(cam);emit(f.fromK,f.k,t);
+      content.style.setProperty('--wk',b.toFixed(3));place(cam);draw(cam);emit(f.fromK,f.k,t);
       if(t>=1){cam={x:f.to.x,y:f.to.y,z:f.to.z,ry:f.to.ry};flight=null;rest();draw(cam);f.resolve()}
     }else if(idle){draw(idleCam(now));lastIdle=now}
     if(flight||idle&&!document.hidden)loop();
