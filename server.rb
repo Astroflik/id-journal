@@ -227,8 +227,8 @@ def handle_state(request, response)
 end
 
 def static_file_for(path)
-  relative = path == '/' ? 'journal.html' : path.sub(%r{\A/}, '')
-  return nil unless relative.match?(/\A(?:journal\.html|firebase-config\.js|assets\/[A-Za-z0-9._-]+)\z/)
+  relative = path == '/' ? 'index.html' : path.sub(%r{\A/}, '')
+  return nil unless relative.match?(/\A(?:index\.html|app\/index\.html|firebase-config\.js|assets\/[A-Za-z0-9._-]+)\z/)
 
   full_path = File.expand_path(relative, PUBLIC)
   return nil unless full_path.start_with?(PUBLIC + File::SEPARATOR) && File.file?(full_path)

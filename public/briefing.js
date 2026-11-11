@@ -3,7 +3,7 @@
    Ничего личного в этих файлах быть не должно: репозиторий публичный. */
 (() => {
   'use strict';
-  const BASE = 'briefing/';
+  const BASE = '../briefing/';
   const W_KEY = 'jbriefw', OPEN_KEY = 'jbriefopen';
 
   const h = (tag, cls, text) => {

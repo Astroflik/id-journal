@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Journal by myIDgod — журнал сделок для order flow</title>
+<meta name="description" content="Journal by myIDgod — онлайн-журнал сделок для трейдеров order flow: риск в процентах, разбор по триггерам, синхронизация между устройствами. 14 дней бесплатно, без карты.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F5F5F3">
+<style>
+:root{--w:#F5F5F3;--k:#0A0A0B;--g:#6B6D75;--line:rgba(10,10,11,.14);--mono:ui-monospace,"IBM Plex Mono","DM Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--w);color:var(--k);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit}::selection{background:var(--k);color:var(--w)}
+:focus-visible{outline:2px solid var(--k);outline-offset:3px}
+.mono{font:500 12px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(20px,4vw,48px)}
+header{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
+header nav{display:flex;gap:24px;align-items:center}header nav a{text-decoration:none;color:var(--g)}header nav a:hover{color:var(--k)}
+.hero{position:relative;min-height:calc(100svh - 70px);display:flex;flex-direction:column;justify-content:center;padding:40px 0 90px;overflow:hidden}
+.grid{position:absolute;inset:auto -10% 0;height:55%;pointer-events:none;background:
+ linear-gradient(var(--line) 1px,transparent 1px) 0 0/100% 56px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/56px 100%;
+ transform:perspective(520px) rotateX(62deg);transform-origin:50% 100%;-webkit-mask:linear-gradient(transparent,#000 70%);mask:linear-gradient(transparent,#000 70%)}
+.frame{position:absolute;width:22px;height:22px;border:solid var(--k);opacity:.55}
+.f1{top:0;left:0;border-width:1px 0 0 1px}.f2{top:0;right:0;border-width:1px 1px 0 0}
+h1{font-weight:500;font-size:clamp(2.6rem,8.4vw,7rem);line-height:.98;letter-spacing:-.045em;margin:18px 0 0;max-width:12ch;text-wrap:balance}
+.lead{max-width:46ch;color:var(--g);font-size:clamp(1rem,1.6vw,1.2rem);margin:26px 0 0}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:15px 24px;border:1px solid var(--k);border-radius:2px;font-weight:500;text-decoration:none;transition:background .25s,color .25s,transform .25s}
+.btn.p{background:var(--k);color:var(--w)}.btn.p:hover{background:var(--w);color:var(--k)}
+.btn.s:hover{background:var(--k);color:var(--w)}.btn:active{transform:translateY(1px)}
+.note{margin-top:16px;color:var(--g)}
+section{padding:clamp(64px,10vw,130px) 0;border-top:1px solid var(--line)}
+h2{font-weight:500;font-size:clamp(1.9rem,4.6vw,3.6rem);line-height:1.04;letter-spacing:-.035em;margin:14px 0 0;max-width:18ch;text-wrap:balance}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:48px}
+.card{background:var(--w);padding:30px 26px 34px;min-height:220px}
+.card b{display:block;font-weight:500;font-size:1.25rem;letter-spacing:-.02em;margin:46px 0 8px}.card p{margin:0;color:var(--g)}
+.dark{background:var(--k);color:var(--w);border-top:0}.dark h2{max-width:16ch}.dark .lead{color:#9a9ca4}
+.dark .btn{border-color:var(--w)}.dark .btn.p{background:var(--w);color:var(--k)}.dark .btn.p:hover{background:var(--k);color:var(--w)}
+.dark :focus-visible{outline-color:var(--w)}
+footer{background:var(--k);color:#9a9ca4;padding:28px 0 40px;border-top:1px solid #26262a}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}footer a{text-decoration:none}footer a:hover{color:var(--w)}
+.rv{opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.rv{opacity:1;transform:none;transition:none}.btn{transition:none}}
+@media (max-width:560px){header nav a.h{display:none}.btn{width:100%;justify-content:center}}
+</style></head><body>
+<div class="wrap">
+<header><span class="mono">Journal / myIDgod</span><nav><a class="mono h" href="#features">Возможности</a><a class="mono h" href="privacy.html">Конфиденциальность</a><a class="mono" id="open" href="app/" hidden>Открыть журнал →</a></nav></header>
+<main>
+<div class="hero"><i class="frame f1"></i><i class="frame f2"></i><div class="grid" aria-hidden="true"></div>
+<p class="mono" style="margin:0;color:var(--g)">[ Журнал для трейдера order flow ]</p>
+<h1>Каждая сделка. Весь контекст.</h1>
+<p class="lead">Журнал для order flow: риск в процентах от баланса, разбор по триггерам, синхронизация между устройствами.</p>
+<div class="cta"><a class="btn p" href="app/?login=1" id="login">Войти через Google</a><a class="btn s" href="app/?login=1">14 дней бесплатно, без карты</a></div>
+<p class="note mono">Карта не нужна · данные только ваши</p></div>
+</main></div>
+<section id="features"><div class="wrap"><p class="mono rv" style="color:var(--g);margin:0">[ Возможности ]</p><h2 class="rv">Всё, что нужно после торгового дня</h2>
+<div class="cards">
+<div class="card rv"><span class="mono" style="color:var(--g)">01</span><b>Журнал сделок</b><p>Входы, выходы, заметки и скриншоты в одном месте. Быстрый поиск и разбор.</p></div>
+<div class="card rv"><span class="mono" style="color:var(--g)">02</span><b>Риск в процентах</b><p>Результат считается от баланса счёта, а не в абстрактных пунктах.</p></div>
+<div class="card rv"><span class="mono" style="color:var(--g)">03</span><b>Разбор по триггерам</b><p>Видно, какие сетапы приносят деньги, а какие только съедают депозит.</p></div>
+<div class="card rv"><span class="mono" style="color:var(--g)">04</span><b>Импорт ATAS и MT5</b><p>Сделки из торговых платформ без ручного ввода. Скоро.</p></div>
+</div></div></section>
+<section class="dark"><div class="wrap"><p class="mono rv" style="color:#9a9ca4;margin:0">[ Старт ]</p><h2 class="rv">14 дней бесплатно, без карты</h2>
+<p class="lead rv">Войдите через Google, и журнал откроется сразу. Данные хранятся в вашем аккаунте и доступны с любого устройства.</p>
+<div class="cta rv"><a class="btn p" href="app/?login=1">Войти через Google</a></div></div></section>
+<footer><div class="wrap"><span class="mono">© Journal by myIDgod</span><span class="mono"><a href="privacy.html">Политика конфиденциальности</a></span></div></footer>
+<script>
+(function(){try{for(var i=0;i<localStorage.length;i++){if(/^sb-.*-auth-token$/.test(localStorage.key(i))){var o=document.getElementById('open');o.hidden=false;var l=document.getElementById('login');l.textContent='Открыть журнал';l.href='app/';break}}}catch(e){}
+var els=document.querySelectorAll('.rv');if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return}
+var io=new IntersectionObserver(function(a){a.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{threshold:.15});els.forEach(function(e){io.observe(e)})})();
+</script></body></html>

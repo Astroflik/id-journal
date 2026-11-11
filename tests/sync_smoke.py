@@ -34,7 +34,7 @@ def serve():
 
 def main():
     server = serve()
-    base = 'http://127.0.0.1:%d/journal.html' % server.server_address[1]
+    base = 'http://127.0.0.1:%d/app/index.html' % server.server_address[1]
     with sync_playwright() as pw:
         browser = pw.chromium.launch(channel='chrome', headless=True)
 
@@ -91,7 +91,7 @@ def main():
         page.wait_for_function("JSON.parse(sessionStorage.getItem('__fakedb')).calls.some(c=>c[0]==='register_device')", timeout=5000)
         regs = [c[1] for c in db(page)['calls'] if c[0] == 'register_device']
         check('device registered once with a SHA-256 hex hash', len(regs) == 1 and len(regs[0]['hash']) == 64 and all(ch in '0123456789abcdef' for ch in regs[0]['hash']), regs)
-        check('auth/profile link to privacy policy', page.evaluate("(()=>{accountApi.openProfile();const a=document.querySelector('.auth-modal a[href=\"privacy.html\"]');document.querySelectorAll('.ov').forEach(o=>o.remove());return !!a})()"))
+        check('auth/profile link to privacy policy', page.evaluate("(()=>{accountApi.openProfile();const a=document.querySelector('.auth-modal a[href=\"../privacy.html\"]');document.querySelectorAll('.ov').forEach(o=>o.remove());return !!a})()"))
         check('banner shows trial end date', page.locator('.acc-banner', has_text='Пробный период до 25.11.2026').count() == 1)
         check('trial: write buttons visible', page.evaluate("(()=>{const b=el('button','p','＋ Сделка 1');document.body.append(b);const v=getComputedStyle(b).display!=='none';b.remove();return v})()"))
 

@@ -13,7 +13,7 @@ live in a Supabase project; the browser talks to it directly.
   `dist/umd/supabase.js` from the npm package, unmodified.
   SHA-256 `a867edbcfb029370aeec7223dd6180b560b621fbe3bc64c6584fb0369d1b7bce`.
   To update: download the new npm package, replace the file, update the
-  version in `public/journal.html` and the checksum here, run the test.
+  version in `public/app/index.html` and the checksum here, run the test.
 - Never commit: the secret (`sb_secret_…`) or `service_role` key, the Google
   OAuth client secret, database passwords, user data.
 

@@ -25,8 +25,6 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Prepare static site
-        run: cp public/journal.html public/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public

@@ -36,9 +36,9 @@ account endpoints, and persistent account data from the same origin.
 
 ## Structure
 
-- `public/journal.html` is a small shell; the app lives in `public/app.js` and
+- `public/index.html` is the landing page (site root); `public/app/index.html` is the journal shell (`/app/`); the app lives in `public/app.js` and
   `public/app.css`. When you change them, bump the `?v=` value in the tags in
-  `journal.html` so browsers do not keep an old cached copy.
+  `app/index.html` so browsers do not keep an old cached copy.
 - `public/briefing.js` / `public/briefing.css` are the left-docked Briefing
   panel and the "Export for Claude" button.
 - `public/briefing/latest.json` and `history.json` hold the daily briefing and
