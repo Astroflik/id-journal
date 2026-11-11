@@ -28,7 +28,7 @@
   function sm(a, b, x) { var t = min(1, max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
   function cx(z) { return 1.6 * sin(z * .085) + .7 * sin(z * .19 + 1.3); }
   function cy(z) { return 1.7 + .35 * sin(z * .13); }
-  var L = 5, SR = 3, SC = [cx(-78) + 1, 3.6, -78];
+  var L = 9, SR = 3, SKY = .86, SC = [cx(-78) + 1, 3.6, -78];
   var PEAKS = [[3.4, 1.5, 2.3, 4.5], [-7.5, -18, 1.8, 7], [8.5, -27, 2.2, 9], [-9, -71, 2, 10], [9.5, -88, 2.4, 9], [-6, 6, 1.4, 6]];
   function H(x, z) {
     var d = abs(x - cx(z)), h = fbm(x * .21 + 11, z * .21 + 7) * 1.7 * (.22 + 1.35 * sm(1, 7, d));
@@ -52,7 +52,7 @@
   }
   // terrain, slab by slab; denser where the camera flies high (start and globe)
   (function () {
-    var NT = 360000 * den, SL = 43, sw = [], sum = 0, i;
+    var NT = 470000 * den, SL = 43, sw = [], sum = 0, i;
     for (i = 0; i < SL; i++) { var zc = 11.5 - (i + .5) * 2.5, w = zc > -9 ? 2.6 : zc < -64 ? 1.5 : 1; sw.push(w); sum += w; }
     sw.forEach(function (w, i) {
       tasks.push(function () {
@@ -60,7 +60,7 @@
         while (got < cnt && tr < cnt * 14) {
           tr++; var z = zs - rnd() * 2.5, x = cx(z) + (rnd() < .5 ? -1 : 1) * 12.5 * Math.pow(rnd(), 1.5), h = H(x, z), t = h * L;
           var sh = min(1, max(0, .42 + (H(x + .17, z + .22) - h) * 3.2));   // light from +x+z: slopes facing away are darker
-          if (abs(t - Math.round(t)) < .07 || rnd() < .04 + .34 * sh * sh) { add(x, h, z, 0, sh); got++; }
+          if (abs(t - Math.round(t)) < .085 || rnd() < .015 + .12 * sh * sh) { add(x, h, z, 0, sh); got++; }
         }
       });
     });
@@ -75,9 +75,9 @@
       for (i = 0; i < nx; i++) {
         var dx = -12.5 + i * STP, x = c0 + dx, h = H(x, z), gx = (H(x + .12, z) - H(x - .12, z)) / .24, gz = (H(x, z + .12) - h) / .12;
         var nl = Math.hypot(gx, 1, gz), lit = (-gx * Lx + Ly - gz * Lz) / nl;
-        var g = .968 - .24 * (1 - sm(.25, .95, lit)) - .05 * sm(1.5, 0, h);
-        g -= .2 * (1 - sm(.35, 1.5, abs(dx)));                                   // the trail
-        g = g + (.961 - g) * sm(8.5, 12.4, abs(dx));
+        var g = .79 - .26 * (1 - sm(.25, .95, lit)) - .05 * sm(1.5, 0, h);
+        g -= .27 * (1 - sm(.35, 1.6, abs(dx)));                                   // the trail
+        g = g + (SKY - g) * sm(8.5, 12.4, abs(dx));
         V[o++] = x; V[o++] = h; V[o++] = z; V[o++] = g;
       }
     }
@@ -289,15 +289,15 @@
   var prog, U = {};
   try { prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link'); }
   catch (e) { if (W.console) console.warn('Landing scene is off:', e.message); root.classList.add('noscene'); return; }
-  var MVS = 'attribute vec4 a;uniform mat4 m;uniform vec4 u2;uniform vec2 fv;varying float g;void main(){vec4 c=m*vec4(a.xyz,1.);c.xy+=u2.xy*c.w;gl_Position=c;g=mix(.961,a.w,1.-smoothstep(fv.x,fv.y,c.w));}';
+  var MVS = 'attribute vec4 a;uniform mat4 m;uniform vec4 u2;uniform vec2 fv;uniform float sk;varying float g;void main(){vec4 c=m*vec4(a.xyz,1.);c.xy+=u2.xy*c.w;gl_Position=c;g=mix(sk,a.w,1.-smoothstep(fv.x,fv.y,c.w));}';
   var MFS = 'precision mediump float;varying float g;void main(){gl_FragColor=vec4(g,g,g-.006,1.);}';
   var mprog = null, MU = {}, mbuf, ibuf, mn = 0, pbuf, AP, MA;
   try { mprog = gl.createProgram(); gl.attachShader(mprog, sh(gl.VERTEX_SHADER, MVS)); gl.attachShader(mprog, sh(gl.FRAGMENT_SHADER, MFS)); gl.linkProgram(mprog); if (!gl.getProgramParameter(mprog, gl.LINK_STATUS)) mprog = null; } catch (e) { mprog = null; }
-  if (mprog) ['m', 'u2', 'fv'].forEach(function (k) { MU[k] = gl.getUniformLocation(mprog, k); });
+  if (mprog) ['m', 'u2', 'fv', 'sk'].forEach(function (k) { MU[k] = gl.getUniformLocation(mprog, k); });
   gl.useProgram(prog);
   ['m', 'u0', 'u1', 'u2', 'u3', 'lay', 'sc', 'eye'].forEach(function (k) { U[k] = gl.getUniformLocation(prog, k); });
   gl.uniform3f(U.sc, SC[0], SC[1], SC[2]);
-  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.clearColor(.961, .961, .953, 1); gl.depthFunc(gl.LEQUAL); gl.polygonOffset(2, 6);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.clearColor(SKY, SKY, SKY - .006, 1); gl.depthFunc(gl.LEQUAL); gl.polygonOffset(2, 6);
 
   // ---- camera ----
   function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
@@ -388,7 +388,7 @@
     gl.uniform3f(U.lay, lay.dots, lay.lines, lay.pins); gl.uniform3f(U.eye, e[0], e[1], e[2]);
     gl.disable(gl.DEPTH_TEST); c = floor(cnt[NB + 1] * frac); if (c) gl.drawArrays(gl.POINTS, st[NB + 1], c);
     if (mprog && mn) {
-      gl.useProgram(mprog); gl.uniformMatrix4fv(MU.m, false, M); gl.uniform4f(MU.u2, ox, oy, 0, 0); gl.uniform2f(MU.fv, 13, 30);
+      gl.useProgram(mprog); gl.uniformMatrix4fv(MU.m, false, M); gl.uniform4f(MU.u2, ox, oy, 0, 0); gl.uniform2f(MU.fv, 13, 30); gl.uniform1f(MU.sk, SKY);
       gl.bindBuffer(gl.ARRAY_BUFFER, mbuf); gl.vertexAttribPointer(MA, 4, gl.FLOAT, false, 0, 0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuf);
       gl.enable(gl.DEPTH_TEST); gl.depthMask(true); gl.enable(gl.POLYGON_OFFSET_FILL); gl.disable(gl.BLEND);
       gl.drawElements(gl.TRIANGLES, mn, gl.UNSIGNED_SHORT, 0);

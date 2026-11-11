@@ -102,7 +102,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .rv{opacity:0;transform:perspective(1100px) translate3d(0,56px,-180px) rotateX(16deg);transform-origin:50% 100%;transition:opacity 1.1s var(--ease),transform 1.3s var(--ease),filter 1.1s var(--ease);transition-delay:var(--d,0s);filter:blur(8px);will-change:transform,opacity}
 /* panels fly in from behind the viewer: they start past the camera plane and settle onto the screen */
 .panel.rv{transform:perspective(1000px) translate3d(-14vw,22vh,860px) rotateY(-16deg) rotateX(10deg) rotateZ(-3deg);transform-origin:50% 50%;transition:opacity .8s ease .12s,transform 1.6s cubic-bezier(.12,.9,.18,1),filter 1.2s var(--ease)}.panel.rv.right{transform:perspective(1000px) translate3d(14vw,22vh,860px) rotateY(16deg) rotateX(10deg) rotateZ(3deg)}
-.rv.in{opacity:1;transform:none;filter:none}.rv.tilting{transition:transform .18s linear,opacity 1s,filter 1s;transition-delay:0s}
+.rv.in,.panel.rv.in{opacity:1;transform:none;filter:none}.rv.tilting{transition:transform .18s linear,opacity 1s,filter 1s;transition-delay:0s}
 .layer{opacity:0;transform:translate3d(-28px,0,-60px) rotateY(14deg);transition:opacity .9s var(--ease),transform 1.1s var(--ease);transition-delay:calc(.25s + var(--i,0)*.14s)}.in .layer{opacity:1;transform:none}
 .stats div{opacity:0;transform:translateY(24px) rotateX(40deg);transition:opacity .8s var(--ease),transform 1s var(--ease);transition-delay:calc(.35s + var(--i,0)*.12s)}.in .stats div{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.ch,.wd{opacity:1!important;transform:none!important;filter:none!important;transition:none!important}.rv,.layer,.stats div{opacity:1!important;transform:none!important;transition:none;filter:none}.logo svg *{stroke-dashoffset:0!important;animation:none!important}.logo .lo{opacity:.6}.btn,.pill,.sw,.sw::after,#scene{transition:none}.pin[data-main] i::before{animation:none;display:none}}
@@ -198,7 +198,7 @@ if(!RM&&matchMedia('(pointer:fine)').matches)d.querySelectorAll('.panel').forEac
 var els=d.querySelectorAll('.rv');if('IntersectionObserver' in window){var io=new IntersectionObserver(function(a){a.forEach(function(x){if(x.isIntersecting){var t=x.target._rv||x.target;t.classList.add('in');io.unobserve(x.target);(t.matches('.mono.k')?[t]:[].slice.call(t.querySelectorAll(':scope>.mono.k'))).forEach(scramble)}})},{threshold:.12});els.forEach(function(e){if(e.classList.contains('panel')){var sc=e.closest('section');sc._rv=e;io.observe(sc)}else io.observe(e)})}else els.forEach(function(e){e.classList.add('in')});
 // The 3D scene loads after the first screen is ready; Data Saver skips it.
 var c=navigator.connection;if(c&&c.saveData){root.classList.add('noscene');return}
-function go(){var s=d.createElement('script');s.src='landing/scene.js?v=20261111n';s.async=true;s.onerror=function(){root.classList.add('noscene')};d.body.appendChild(s)}
+function go(){var s=d.createElement('script');s.src='landing/scene.js?v=20261111p';s.async=true;s.onerror=function(){root.classList.add('noscene')};d.body.appendChild(s)}
 function idle(){(window.requestIdleCallback||function(f){setTimeout(f,150)})(go,{timeout:1200})}
 if(d.readyState==='complete')idle();else window.addEventListener('load',idle)})();
 </script></body></html>
