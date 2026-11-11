@@ -2,69 +2,156 @@
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Journal by myIDgod — журнал сделок для order flow</title>
-<meta name="description" content="Journal by myIDgod — онлайн-журнал сделок для трейдеров order flow: риск в процентах, разбор по триггерам, синхронизация между устройствами. 14 дней бесплатно, без карты.">
+<meta name="description" content="Journal by myIDgod — онлайн-журнал сделок для трейдеров order flow: риск в процентах от баланса, разбор по триггерам, синхронизация между устройствами. 14 дней бесплатно, без карты.">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#F5F5F3">
 <style>
-:root{--w:#F5F5F3;--k:#0A0A0B;--g:#6B6D75;--line:rgba(10,10,11,.14);--mono:ui-monospace,"IBM Plex Mono","DM Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-*{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;background:var(--w);color:var(--k);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+:root{--w:#F5F5F3;--k:#0A0A0B;--g:#5E6068;--line:rgba(10,10,11,.13);--mono:ui-monospace,"IBM Plex Mono","DM Mono",SFMono-Regular,Menlo,Consolas,monospace;--sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:"Instrument Serif","Iowan Old Style",Georgia,"Times New Roman",serif;--ease:cubic-bezier(.16,1,.3,1)}
+*{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--w)}
+body{margin:0;background:var(--w);color:var(--k);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit}::selection{background:var(--k);color:var(--w)}
 :focus-visible{outline:2px solid var(--k);outline-offset:3px}
-.mono{font:500 12px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase}
-.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(20px,4vw,48px)}
-header{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
-header nav{display:flex;gap:24px;align-items:center}header nav a{text-decoration:none;color:var(--g)}header nav a:hover{color:var(--k)}
-.hero{position:relative;min-height:calc(100svh - 70px);display:flex;flex-direction:column;justify-content:center;padding:40px 0 90px;overflow:hidden}
-.grid{position:absolute;inset:auto -10% 0;height:55%;pointer-events:none;background:
- linear-gradient(var(--line) 1px,transparent 1px) 0 0/100% 56px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/56px 100%;
- transform:perspective(520px) rotateX(62deg);transform-origin:50% 100%;-webkit-mask:linear-gradient(transparent,#000 70%);mask:linear-gradient(transparent,#000 70%)}
-.frame{position:absolute;width:22px;height:22px;border:solid var(--k);opacity:.55}
-.f1{top:0;left:0;border-width:1px 0 0 1px}.f2{top:0;right:0;border-width:1px 1px 0 0}
-h1{font-weight:500;font-size:clamp(2.6rem,8.4vw,7rem);line-height:.98;letter-spacing:-.045em;margin:18px 0 0;max-width:12ch;text-wrap:balance}
-.lead{max-width:46ch;color:var(--g);font-size:clamp(1rem,1.6vw,1.2rem);margin:26px 0 0}
+em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em}
+.mono{font:500 11.5px/1.5 var(--mono);letter-spacing:.09em;text-transform:uppercase}
+.wrap{max-width:1240px;margin:0 auto;padding:0 clamp(20px,4vw,48px)}
+/* scene layers */
+#scene{position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;z-index:0;opacity:0;transition:opacity 1.6s var(--ease)}
+.scene-on #scene{opacity:1}.scene-off #scene,.scene-off #pins,.scene-off .hud{visibility:hidden}
+.noscene #scene,.noscene #pins,.noscene .hud{display:none}
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(245,245,243,.95) 0,rgba(245,245,243,.78) 30%,rgba(245,245,243,0) 60%)}
+#pins{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.pin{position:absolute;left:0;top:0;opacity:0;will-change:transform,opacity}
+.pin i{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border:1px solid var(--k);border-radius:50%;background:rgba(245,245,243,.7)}
+.pin i::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--k)}
+.pin[data-main] i::before{content:"";position:absolute;inset:-9px;border:1px solid var(--k);border-radius:50%;animation:ping 2.4s var(--ease) infinite}
+.pin s{position:absolute;left:0;bottom:7px;width:1px;height:58px;background:var(--k)}
+.pin b{position:absolute;left:8px;bottom:58px;background:var(--k);color:var(--w);font:500 10.5px/1.45 var(--mono);letter-spacing:.08em;padding:7px 10px;white-space:nowrap}
+.pin.flip b{left:auto;right:8px}.pin b span{display:block;color:#a8aab0}
+@keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2);opacity:0}}
+.hud{position:fixed;z-index:2;top:92px;right:clamp(20px,4vw,48px);border:1px solid var(--line);background:rgba(245,245,243,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:10px 14px;display:grid;grid-template-columns:auto auto;gap:2px 22px;color:var(--g);pointer-events:none}
+.hud b{font-weight:500;color:var(--k);text-align:right}
+/* header */
+.top{position:fixed;z-index:10;top:14px;left:50%;transform:translateX(-50%);width:min(1240px,calc(100% - 28px));display:flex;justify-content:space-between;align-items:center;gap:16px;padding:9px 9px 9px 20px;border:1px solid var(--line);border-radius:999px;background:rgba(245,245,243,.72);-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;font:600 13px/1 var(--mono);letter-spacing:.14em}
+.logo i{width:18px;height:18px;border:1.5px solid var(--k);border-radius:50%;position:relative}.logo i::after{content:"";position:absolute;inset:3.5px;border:1.5px solid var(--k);border-radius:50%}
+.top nav{display:flex;gap:26px}.top nav a{text-decoration:none;color:var(--g);font-size:14px;transition:color .2s}.top nav a:hover{color:var(--k)}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:var(--k);color:var(--w);text-decoration:none;font-size:14px;font-weight:500;transition:transform .3s var(--ease),background .2s}
+.pill:hover{transform:translateY(-1px)}
+/* scenic sections */
+main{position:relative;z-index:3}
+.stop{min-height:100vh;min-height:100svh;display:flex;align-items:center;padding:120px 0 80px}
+.hero{position:relative;overflow:hidden;flex-direction:column;align-items:stretch;justify-content:center}
+.tag{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);padding:7px 12px;background:rgba(245,245,243,.6)}
+.tag::before{content:"";width:6px;height:6px;background:var(--k)}
+h1{font-weight:500;font-size:clamp(2.7rem,7.6vw,6.6rem);line-height:.97;letter-spacing:-.045em;margin:24px 0 0;max-width:11ch;text-wrap:balance}
+h1 em{letter-spacing:-.02em}
+.lead{max-width:44ch;color:var(--g);font-size:clamp(1rem,1.5vw,1.16rem);margin:26px 0 0}
 .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
-.btn{display:inline-flex;align-items:center;gap:10px;padding:15px 24px;border:1px solid var(--k);border-radius:2px;font-weight:500;text-decoration:none;transition:background .25s,color .25s,transform .25s}
-.btn.p{background:var(--k);color:var(--w)}.btn.p:hover{background:var(--w);color:var(--k)}
-.btn.s:hover{background:var(--k);color:var(--w)}.btn:active{transform:translateY(1px)}
-.note{margin-top:16px;color:var(--g)}
-section{padding:clamp(64px,10vw,130px) 0;border-top:1px solid var(--line)}
-h2{font-weight:500;font-size:clamp(1.9rem,4.6vw,3.6rem);line-height:1.04;letter-spacing:-.035em;margin:14px 0 0;max-width:18ch;text-wrap:balance}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:48px}
-.card{background:var(--w);padding:30px 26px 34px;min-height:220px}
-.card b{display:block;font-weight:500;font-size:1.25rem;letter-spacing:-.02em;margin:46px 0 8px}.card p{margin:0;color:var(--g)}
-.dark{background:var(--k);color:var(--w);border-top:0}.dark h2{max-width:16ch}.dark .lead{color:#9a9ca4}
-.dark .btn{border-color:var(--w)}.dark .btn.p{background:var(--w);color:var(--k)}.dark .btn.p:hover{background:var(--k);color:var(--w)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:12px;padding:15px 24px;border:1px solid var(--k);border-radius:999px;font-weight:500;text-decoration:none;transition:background .3s,color .3s,transform .3s var(--ease)}
+.btn.p{background:var(--k);color:var(--w)}.btn.p:hover{transform:translateY(-2px)}
+.btn.s{background:rgba(245,245,243,.6)}.btn.s:hover{background:var(--k);color:var(--w)}
+.btn .ar{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--w);color:var(--k);font-size:12px}
+.hero-foot{position:absolute;left:0;right:0;bottom:26px;display:flex;justify-content:space-between;gap:16px;color:var(--g)}
+.hero-foot span:first-child::before{content:"";display:inline-block;width:28px;height:1px;background:var(--k);vertical-align:middle;margin-right:12px}
+.grid{position:absolute;inset:auto -10% 0;height:52%;pointer-events:none;z-index:-1;background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/100% 56px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/56px 100%;transform:perspective(520px) rotateX(62deg);transform-origin:50% 100%;-webkit-mask:linear-gradient(transparent,#000 70%);mask:linear-gradient(transparent,#000 70%);transition:opacity 1.2s}
+.scene-on .grid{opacity:0}
+.hero-txt{max-width:760px}.panel{max-width:540px;background:rgba(245,245,243,.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--line);padding:clamp(24px,3vw,38px)}
+h2{font-weight:500;font-size:clamp(2rem,4.2vw,3.5rem);line-height:1.02;letter-spacing:-.04em;margin:16px 0 0;text-wrap:balance}
+.panel p{color:var(--g);margin:18px 0 0}
+.k{color:var(--g)}
+.layers{margin-top:26px;border-top:1px solid var(--line)}
+.layer{display:grid;grid-template-columns:34px 1fr auto;gap:4px 14px;align-items:start;padding:18px 0;border-bottom:1px solid var(--line)}
+.layer b{font-weight:500;font-size:1.12rem;letter-spacing:-.02em}.layer b small{font:500 10.5px var(--mono);letter-spacing:.09em;color:var(--g);margin-left:10px}
+.layer p{grid-column:2;margin:2px 0 0;font-size:.95rem}
+.sw{width:46px;height:26px;border-radius:99px;border:1px solid var(--k);background:transparent;position:relative;cursor:pointer;padding:0;transition:background .3s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--k);transition:transform .35s var(--ease),background .3s}
+.sw[aria-checked=true]{background:var(--k)}.sw[aria-checked=true]::after{transform:translateX(20px);background:var(--w)}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.stats div b{display:block;font-weight:500;font-size:1.9rem;letter-spacing:-.03em;line-height:1.1}
+.right{margin-left:auto}
+/* solid sections */
+.solid{position:relative;background:var(--w);padding:clamp(70px,10vw,140px) 0;border-top:1px solid var(--line)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:52px}
+.card{background:var(--w);padding:30px 26px 34px;min-height:230px;transition:background .3s}
+.card:hover{background:#fff}
+.card b{display:block;font-weight:500;font-size:1.28rem;letter-spacing:-.02em;margin:52px 0 8px}.card p{margin:0;color:var(--g)}
+.dark{position:relative;background:var(--k);color:var(--w);padding:clamp(80px,12vw,160px) 0}
+.dark h2{font-size:clamp(2.4rem,6vw,5rem);max-width:14ch}.dark .lead{color:#a3a5ad}.dark .k{color:#a3a5ad}
+.dark .btn.p{background:var(--w);color:var(--k);border-color:var(--w)}.dark .btn .ar{background:var(--k);color:var(--w)}
 .dark :focus-visible{outline-color:var(--w)}
-footer{background:var(--k);color:#9a9ca4;padding:28px 0 40px;border-top:1px solid #26262a}
+footer{position:relative;background:var(--k);color:#a3a5ad;padding:26px 0 40px;border-top:1px solid #26262a}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}footer a{text-decoration:none}footer a:hover{color:var(--w)}
-.rv{opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}.rv.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.rv{opacity:1;transform:none;transition:none}.btn{transition:none}}
-@media (max-width:560px){header nav a.h{display:none}.btn{width:100%;justify-content:center}}
+.rv{opacity:0;transform:translateY(22px);transition:opacity 1s var(--ease),transform 1s var(--ease)}.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.rv{opacity:1;transform:none;transition:none}.btn,.pill,.sw,.sw::after,#scene{transition:none}.pin[data-main] i::before{animation:none;display:none}}
+@media (max-width:820px){.top nav,.hud{display:none}.veil{background:linear-gradient(180deg,rgba(245,245,243,.95) 0,rgba(245,245,243,.7) 42%,rgba(245,245,243,0) 66%)}
+ .stop:not(.hero){align-items:flex-end;padding-bottom:28px}.panel{max-width:none}.hero{justify-content:flex-start;padding-top:118px}.hero-foot span:last-child{display:none}}
+@media (max-width:560px){.btn{width:100%}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stats div b{font-size:1.4rem}.layer{padding:13px 0}.layer p{display:none}.panel p{font-size:.95rem}h2{font-size:1.85rem}.pin b{font-size:9.5px;padding:5px 8px}.pin s{height:40px}.pin b{bottom:40px}.stats{gap:20px}}
 </style></head><body>
-<div class="wrap">
-<header><span class="mono">Journal / myIDgod</span><nav><a class="mono h" href="#features">Возможности</a><a class="mono h" href="privacy.html">Конфиденциальность</a><a class="mono" id="open" href="app/" hidden>Открыть журнал →</a></nav></header>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="veil" aria-hidden="true"></div>
+<div id="pins" aria-hidden="true">
+ <div class="pin" data-main data-x="1.6" data-z="-0.6"><s></s><i></i><b>Сделка #0417 · A+<span>NQ · LONG · +3.2R</span></b></div>
+ <div class="pin" data-x="-2.6" data-z="2.2"><s></s><i></i><b>ES · SHORT<span>+1.8R</span></b></div>
+ <div class="pin" data-x="3.6" data-z="1.9"><s></s><i></i><b>NQ · BE<span>0.0R</span></b></div>
+ <div class="pin" data-x="-0.9" data-z="-2.9"><s></s><i></i><b>NQ · СТОП<span>−1.0R · FOMO</span></b></div>
+</div>
+<div class="hud mono" aria-hidden="true"><span>Вид</span><b id="hv">План</b><span>Высота</span><b id="ha">—</b><span>Наклон</span><b id="ht">—</b><span>Точек</span><b id="hn">—</b></div>
+<header class="top"><a class="logo" href="./" aria-label="Journal by myIDgod, на главную"><i></i>JOURNAL</a>
+<nav aria-label="Разделы"><a href="#layers">Слои</a><a href="#flight">Разбор</a><a href="#features">Возможности</a><a href="privacy.html">Конфиденциальность</a></nav>
+<a class="pill" id="top-cta" href="app/?login=1">Войти</a></header>
 <main>
-<div class="hero"><i class="frame f1"></i><i class="frame f2"></i><div class="grid" aria-hidden="true"></div>
-<p class="mono" style="margin:0;color:var(--g)">[ Журнал для трейдера order flow ]</p>
-<h1>Каждая сделка. Весь контекст.</h1>
-<p class="lead">Журнал для order flow: риск в процентах от баланса, разбор по триггерам, синхронизация между устройствами.</p>
-<div class="cta"><a class="btn p" href="app/?login=1" id="login">Войти через Google</a><a class="btn s" href="app/?login=1">14 дней бесплатно, без карты</a></div>
-<p class="note mono">Карта не нужна · данные только ваши</p></div>
-</main></div>
-<section id="features"><div class="wrap"><p class="mono rv" style="color:var(--g);margin:0">[ Возможности ]</p><h2 class="rv">Всё, что нужно после торгового дня</h2>
-<div class="cards">
-<div class="card rv"><span class="mono" style="color:var(--g)">01</span><b>Журнал сделок</b><p>Входы, выходы, заметки и скриншоты в одном месте. Быстрый поиск и разбор.</p></div>
-<div class="card rv"><span class="mono" style="color:var(--g)">02</span><b>Риск в процентах</b><p>Результат считается от баланса счёта, а не в абстрактных пунктах.</p></div>
-<div class="card rv"><span class="mono" style="color:var(--g)">03</span><b>Разбор по триггерам</b><p>Видно, какие сетапы приносят деньги, а какие только съедают депозит.</p></div>
-<div class="card rv"><span class="mono" style="color:var(--g)">04</span><b>Импорт ATAS и MT5</b><p>Сделки из торговых платформ без ручного ввода. Скоро.</p></div>
+<section class="stop hero" data-k="0"><div class="wrap" style="width:100%"><div class="hero-txt">
+ <span class="tag mono">Журнал сделок для order flow</span>
+ <h1>Каждая сделка. <em>Весь</em> контекст.</h1>
+ <p class="lead">Журнал для трейдера order flow: риск в процентах от баланса, разбор по триггерам и сетапам, синхронизация между устройствами.</p>
+ <div class="cta"><a class="btn p" href="app/?login=1" id="login">Войти через Google <span class="ar" aria-hidden="true">→</span></a><a class="btn s" href="app/?login=1">14 дней бесплатно, без карты</a></div>
+ </div></div>
+ <div class="grid" aria-hidden="true"></div>
+ <div class="wrap hero-foot mono" aria-hidden="true" style="width:100%"><span>Листайте, чтобы наклонить карту</span><span>Изолинии · шаг 1/6 R</span></div>
+</section>
+<section class="stop" data-k="1" id="layers"><div class="wrap" style="width:100%"><div class="panel rv">
+ <span class="mono k">01 / Три слоя</span>
+ <h2>Одна сделка — <em>три</em> слоя.</h2>
+ <p>Каждая запись в журнале разбирается по трём слоям. Переключайте их, и карта за этим текстом перестроится.</p>
+ <div class="layers">
+  <div class="layer"><span class="mono k">01</span><b>Сделки<small>журнал</small></b><button class="sw" role="switch" aria-checked="true" data-layer="dots" aria-label="Слой сделок"></button><p>Вход, выход, скриншоты, заметки и оценка. Поиск и фильтры по любому полю.</p></div>
+  <div class="layer"><span class="mono k">02</span><b>Риск<small>% от баланса</small></b><button class="sw" role="switch" aria-checked="true" data-layer="lines" aria-label="Слой риска"></button><p>Результат в R и в процентах от счёта. Кривая и просадка считаются сами.</p></div>
+  <div class="layer"><span class="mono k">03</span><b>Триггеры<small>CVD · tape · footprint</small></b><button class="sw" role="switch" aria-checked="true" data-layer="pins" aria-label="Слой триггеров"></button><p>Срезы по каждому полю показывают, какие сетапы приносят R, а какие съедают депозит.</p></div>
+ </div></div></div>
+</section>
+<section class="stop" data-k="2" id="flight"><div class="wrap" style="width:100%"><div class="panel rv">
+ <span class="mono k">02 / Разбор</span>
+ <h2>Неделя сделок — <em>одним</em> взглядом.</h2>
+ <p>Кривая, календарь, разбор недели и месяца. Видно, где вы торговали по системе, а где по эмоциям.</p>
+ <div class="stats"><div><b>R</b><span class="mono k">кривая и просадка</span></div><div><b>%</b><span class="mono k">риск от счёта</span></div><div><b>A+</b><span class="mono k">оценка сделки</span></div></div>
 </div></div></section>
-<section class="dark"><div class="wrap"><p class="mono rv" style="color:#9a9ca4;margin:0">[ Старт ]</p><h2 class="rv">14 дней бесплатно, без карты</h2>
-<p class="lead rv">Войдите через Google, и журнал откроется сразу. Данные хранятся в вашем аккаунте и доступны с любого устройства.</p>
-<div class="cta rv"><a class="btn p" href="app/?login=1">Войти через Google</a></div></div></section>
+<section class="stop" data-k="3"><div class="wrap" style="width:100%"><div class="panel rv right">
+ <span class="mono k">03 / Везде</span>
+ <h2>Один журнал на <em>всех</em> устройствах.</h2>
+ <p>Записали сделку с компьютера, открыли разбор с телефона. Данные хранятся в вашем аккаунте и синхронизируются сами.</p>
+ <div class="cta"><a class="btn p" href="app/?login=1">Начать бесплатно <span class="ar" aria-hidden="true">→</span></a></div>
+</div></div></section>
+<section class="solid" id="features"><div class="wrap"><span class="mono k rv">04 / Возможности</span><h2 class="rv" style="max-width:16ch">Всё, что нужно после торгового дня</h2>
+<div class="cards">
+ <div class="card rv"><span class="mono k">01</span><b>План на день</b><p>План до открытия и итог после закрытия. Видно, сбылся ли сценарий.</p></div>
+ <div class="card rv"><span class="mono k">02</span><b>А что если…</b><p>Симулятор правил: что было бы с кривой без худших сетапов или с другим риском.</p></div>
+ <div class="card rv"><span class="mono k">03</span><b>Свои сетапы</b><p>Соберите стратегию из полей журнала и смотрите её отдельную кривую.</p></div>
+ <div class="card rv"><span class="mono k">04</span><b>Импорт ATAS и MT5</b><p>Сделки из торговых платформ без ручного ввода. Скоро.</p></div>
+</div></div></section>
+<section class="dark"><div class="wrap"><span class="mono k rv">05 / Старт</span><h2 class="rv">14 дней бесплатно, <em>без</em> карты</h2>
+<p class="lead rv">Войдите через Google, и журнал откроется сразу. Данные только ваши и доступны с любого устройства.</p>
+<div class="cta rv"><a class="btn p" href="app/?login=1">Войти через Google <span class="ar" aria-hidden="true">→</span></a></div></div></section>
+</main>
 <footer><div class="wrap"><span class="mono">© Journal by myIDgod</span><span class="mono"><a href="privacy.html">Политика конфиденциальности</a></span></div></footer>
 <script>
-(function(){try{for(var i=0;i<localStorage.length;i++){if(/^sb-.*-auth-token$/.test(localStorage.key(i))){var o=document.getElementById('open');o.hidden=false;var l=document.getElementById('login');l.textContent='Открыть журнал';l.href='app/';break}}}catch(e){}
-var els=document.querySelectorAll('.rv');if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return}
-var io=new IntersectionObserver(function(a){a.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{threshold:.15});els.forEach(function(e){io.observe(e)})})();
+(function(){var d=document,root=d.documentElement;
+try{for(var i=0;i<localStorage.length;i++){if(/^sb-.*-auth-token$/.test(localStorage.key(i))){var t=d.getElementById('top-cta'),l=d.getElementById('login');t.textContent='Открыть журнал';t.href='app/';l.firstChild.nodeValue='Открыть журнал ';l.href='app/';break}}}catch(e){}
+window.landingLayers={dots:1,lines:1,pins:1};
+d.querySelectorAll('[data-layer]').forEach(function(b){b.addEventListener('click',function(){var on=b.getAttribute('aria-checked')!=='true';b.setAttribute('aria-checked',on);window.landingLayers[b.dataset.layer]=on?1:0;window.dispatchEvent(new Event('landing:layers'))})});
+var els=d.querySelectorAll('.rv');if('IntersectionObserver' in window){var io=new IntersectionObserver(function(a){a.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{threshold:.12});els.forEach(function(e){io.observe(e)})}else els.forEach(function(e){e.classList.add('in')});
+// The 3D scene loads after the first screen is ready; Data Saver skips it.
+var c=navigator.connection;if(c&&c.saveData){root.classList.add('noscene');return}
+function go(){var s=d.createElement('script');s.src='landing/scene.js?v=20261111d';s.async=true;s.onerror=function(){root.classList.add('noscene')};d.body.appendChild(s)}
+function idle(){(window.requestIdleCallback||function(f){setTimeout(f,150)})(go,{timeout:1200})}
+if(d.readyState==='complete')idle();else window.addEventListener('load',idle)})();
 </script></body></html>
