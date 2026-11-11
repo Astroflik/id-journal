@@ -280,3 +280,5 @@ body.mo-off .dl{stroke-dashoffset:0!important}
 .so-del{border:0;background:none;color:var(--mu);padding:0 4px;opacity:0;cursor:pointer}.so-msg:hover .so-del,.so-del:focus{opacity:1}
 .so-send{display:flex;gap:8px}.so-send input{flex:1}.so-out{justify-content:flex-end}.so-gap{margin-top:4px}
 @media (max-width:560px){.so-me{flex-direction:column;align-items:flex-start}.so-link{grid-template-columns:1fr auto}.so-link input:first-child{grid-column:1/-1}.so-acts{margin-left:0}}
+
+.intro .snd.tap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:1.05rem;padding:16px 28px;animation:pop .6s var(--spring)}
