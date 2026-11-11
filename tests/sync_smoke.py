@@ -88,6 +88,10 @@ def main():
         check('device is marked with its owner', page.evaluate("localStorage.getItem('jowner')") == 'uid-1')
         check('backup snapshot has no session token', not any(k.startswith('sb-') for k in page.evaluate('Object.keys(accountApi.snapshot())')))
         check('access status is read', page.evaluate('accountApi.access.status') == 'trial')
+        page.wait_for_function("JSON.parse(sessionStorage.getItem('__fakedb')).calls.some(c=>c[0]==='register_device')", timeout=5000)
+        regs = [c[1] for c in db(page)['calls'] if c[0] == 'register_device']
+        check('device registered once with a SHA-256 hex hash', len(regs) == 1 and len(regs[0]['hash']) == 64 and all(ch in '0123456789abcdef' for ch in regs[0]['hash']), regs)
+        check('auth/profile link to privacy policy', page.evaluate("(()=>{accountApi.openProfile();const a=document.querySelector('.auth-modal a[href=\"privacy.html\"]');document.querySelectorAll('.ov').forEach(o=>o.remove());return !!a})()"))
         check('banner shows trial end date', page.locator('.acc-banner', has_text='Пробный период до 25.11.2026').count() == 1)
         check('trial: write buttons visible', page.evaluate("(()=>{const b=el('button','p','＋ Сделка 1');document.body.append(b);const v=getComputedStyle(b).display!=='none';b.remove();return v})()"))
 
@@ -142,6 +146,8 @@ def main():
         check('second device loads the cloud copy', sorted(page.evaluate('T.map(t=>t.id)')) == ['A', 'B', 'C', 'D'])
         check('second device: session survives restore', page.evaluate("!!localStorage.getItem('sb-journal-auth')"))
         check('second device: no write on plain load', db(page)['row']['rev'] == cloud['row']['rev'])
+        page.wait_for_timeout(500)
+        check('second device: registers its own device hash', len([c for c in db(page)['calls'] if c[0] == 'register_device']) == 2)
 
         # 7. unsynced local edits at startup (dirty) are merged with a newer cloud copy, not overwritten
         page.evaluate("""()=>{accountApi.enabled=false;const t=JSON.parse(localStorage.getItem('jt')).filter(x=>x.id!=='D');t.push({id:'E',res:'Стоп'});

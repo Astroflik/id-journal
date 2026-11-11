@@ -16,6 +16,7 @@
     async rpc(name,args){
       const db=load();
       if(name==='my_access')return {data:db.access,error:null};
+      if(name==='register_device'){db.calls.push(['register_device',args]);save(db);return {data:db.access,error:null}}
       if(name.startsWith('admin_')){
         if(db.access.status!=='admin')return {data:null,error:{code:'42501',message:'forbidden'}};
         db.calls.push([name,args||null]);save(db);

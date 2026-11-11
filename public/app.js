@@ -640,7 +640,7 @@ const accountApi={
         const box=el('div','account-form'),error=el('div','account-error'),google=el('button','p','Войти через Google');google.type='button';
         google.onclick=async()=>{error.textContent='';google.disabled=true;try{await this.signInWithGoogle()}catch(failure){error.textContent=failure.message;google.disabled=false}};
         box.append(error,google);
-        m.append(el('h3',null,'Вход в Journal'),box,el('div','mu','Первый вход открывает пробный период на 14 дней, карта не нужна. Данные журнала синхронизируются с аккаунтом.'));
+        m.append(el('h3',null,'Вход в Journal'),box,el('div','mu','Первый вход открывает пробный период на 14 дней, карта не нужна. Данные журнала синхронизируются с аккаунтом.'));const pl=el('a',null,'Политика конфиденциальности');pl.href='privacy.html';pl.target='_blank';pl.rel='noopener';const pd=el('div','mu');pd.append('Входя, ты принимаешь ',pl,'.');m.append(pd);
         return
       }
       let registering=mode==='register';
@@ -666,6 +666,25 @@ const accountApi={
       };
       draw()
     })
+  },
+  // SHA-256 of stable browser traits; only the hash leaves the device. Described in privacy.html.
+  async deviceHash(){
+    const n=navigator,sc=screen||{};let gpu='';
+    try{const g=document.createElement('canvas').getContext('webgl'),x=g&&g.getExtension('WEBGL_debug_renderer_info');if(x)gpu=g.getParameter(x.UNMASKED_VENDOR_WEBGL)+'|'+g.getParameter(x.UNMASKED_RENDERER_WEBGL)}catch(e){}
+    const traits=[n.platform,n.hardwareConcurrency,n.deviceMemory,sc.width+'x'+sc.height,sc.colorDepth,window.devicePixelRatio,Intl.DateTimeFormat().resolvedOptions().timeZone,(n.languages||[n.language])[0],n.maxTouchPoints,gpu].join('~');
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('id-journal:'+traits));
+    return Array.from(new Uint8Array(buf),b=>b.toString(16).padStart(2,'0')).join('')
+  },
+  async registerDevice(){
+    if(!this.cloud||!this.user||!(window.crypto&&crypto.subtle))return;
+    const flag='device-registered:'+this.user.uid;
+    try{
+      if(await mget(flag))return;
+      const {data,error}=await this.sb.rpc('register_device',{hash:await this.deviceHash()});
+      if(error)throw new Error(this.describe(error));
+      await mput(flag,1);
+      if(data&&typeof data.status==='string'){this.access=data;if(data.status==='expired'&&!this.readOnly)this.setReadOnly();else this.updateBanner()}
+    }catch(e){console.warn('Device registration failed',e)}
   },
   // One-time per device: screenshots that exist only in this browser (IndexedDB) are uploaded to the cloud bucket.
   async uploadOldShots(){
@@ -723,7 +742,7 @@ const accountApi={
     modal((m,close)=>{
       m.closest('.ov').classList.add('auth-modal');
       m.append(el('h3',null,'Аккаунт'),el('div','mu',this.user.email));
-      const status=this.accessText();if(status)m.append(el('div','mu',status));if(this.readOnly)m.append(el('div','mu',this.reasonText()));if(this.access&&this.access.status==='admin'){const ad=el('button','p','🛡 Админ-панель');ad.onclick=()=>{close();this.openAdmin()};m.append(ad)}
+      const status=this.accessText();if(status)m.append(el('div','mu',status));if(this.readOnly)m.append(el('div','mu',this.reasonText()));{const pl=el('a',null,'Политика конфиденциальности');pl.href='privacy.html';pl.target='_blank';pl.rel='noopener';const pd=el('div','mu');pd.append(pl);m.append(pd)}if(this.access&&this.access.status==='admin'){const ad=el('button','p','🛡 Админ-панель');ad.onclick=()=>{close();this.openAdmin()};m.append(ad)}
       const logout=el('button','s','Выйти из аккаунта');logout.onclick=async()=>{
         logout.disabled=true;
         try{clearTimeout(this.syncTimer);if(this.enabled)await this.sync();if(this.cloud){const {error}=await this.sb.auth.signOut({scope:'local'});if(error)console.warn('Sign-out request failed:',error.message)}else await this.request('/api/logout',{method:'POST',body:'{}'});this.enabled=false;this.user=null;this.rev=0;this.base=null;this.access=null;this.readOnly=false;this.readOnlyShown=false;this.applying=true;localStorage.clear();this.applying=false;T=[];P=[];CFG={accts:[{id:'fp',name:'FundingPips',bal:25000,dd:10,dl:5,tg:8},{id:'iq',name:'IQcapital',bal:50000,dd:10,dl:5,tg:8}]};applyLook();close();render();document.body.classList.add('pre');intro()}
@@ -781,4 +800,4 @@ const originalLookForm2=lookForm2;lookForm2=function(){originalLookForm2();const
 const originalRender=render;render=function(){originalRender();accountApi.updateNav();if(view==='home'&&ready){const v=$('#v');if(!v.querySelector('.home-watermark')){const mark=el('div','home-watermark');mark.style.opacity='.08';mark.style.animation='none';mark.append(logoEl());v.prepend(mark);v.style.position='relative';v.style.isolation='isolate'}}};
 coins();iconify(document.body);
 document.body.classList.add('first');setTimeout(()=>document.body.classList.remove('first'),1700);
-applyLook();render();(async()=>{await accountApi.init();await store.init();await migrateShots();accountApi.uploadOldShots();if(db){try{const s=await db.collection('settings').doc('cfg').get();if(s.exists&&s.data().accts){CFG=s.data();applyLook();render()}}catch(e){console.warn('Could not load journal settings:',e)}}mget('custom-background').then(setCustomBackground);if(accountApi.user){document.querySelectorAll('.intro video').forEach(video=>{video.pause();if(video.src.startsWith('blob:'))URL.revokeObjectURL(video.src)});document.querySelectorAll('.intro,.start').forEach(overlay=>overlay.remove());document.body.classList.remove('pre');render()}else intro()})();
+applyLook();render();(async()=>{await accountApi.init();await store.init();await migrateShots();accountApi.registerDevice().then(()=>accountApi.uploadOldShots());if(db){try{const s=await db.collection('settings').doc('cfg').get();if(s.exists&&s.data().accts){CFG=s.data();applyLook();render()}}catch(e){console.warn('Could not load journal settings:',e)}}mget('custom-background').then(setCustomBackground);if(accountApi.user){document.querySelectorAll('.intro video').forEach(video=>{video.pause();if(video.src.startsWith('blob:'))URL.revokeObjectURL(video.src)});document.querySelectorAll('.intro,.start').forEach(overlay=>overlay.remove());document.body.classList.remove('pre');render()}else intro()})();
