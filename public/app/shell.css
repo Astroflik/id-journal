@@ -106,16 +106,16 @@ body.dock-drag .top{transition:none;cursor:grabbing;translate:none}
 
 /* ---- the station: heading + widgets ---- */
 main{position:relative;z-index:3;max-width:1180px;margin:0 auto;padding:104px clamp(14px,3vw,34px) 70px;transition:opacity .9s var(--ease)}
-#v{position:relative;transition:none;min-height:60vh}
+#v{position:relative;transition:none}
 /* a soft veil keeps the heading readable over the terrain (the landing has one too); it lifts while the camera flies */
 main::before{content:"";position:absolute;z-index:-1;left:-6vw;right:-6vw;top:0;height:400px;pointer-events:none;background:linear-gradient(180deg,rgba(var(--pr),.94) 0,rgba(var(--pr),.86) 55%,rgba(var(--pr),0) 100%);-webkit-mask:linear-gradient(90deg,transparent 0,#000 14%,#000 86%,transparent 100%);mask:linear-gradient(90deg,transparent 0,#000 14%,#000 86%,transparent 100%);transition:opacity .5s var(--ease)}
 main:has(#v.flying)::before,body.perf main::before,.noscene main::before,body.scene-hidden main::before{opacity:0}
 .st-head{margin:0 0 22px;max-width:760px}
 .st-head .k{color:var(--dim);display:flex;align-items:center;gap:10px}
 .st-head .k::before{content:"";width:6px;height:6px;background:var(--ink)}
-.st-head h2{font:500 clamp(2rem,4.2vw,3.5rem)/1.02 var(--sans);letter-spacing:-.04em;margin:14px 0 0;text-wrap:balance;color:var(--ink);
+#v .st-head h2{font:500 clamp(2rem,4.2vw,3.5rem)/1.02 var(--sans);letter-spacing:-.04em;margin:14px 0 0;text-wrap:balance;color:var(--ink);
   text-shadow:0 1px 0 rgba(var(--ir),.07),0 2px 0 rgba(var(--ir),.05),0 3px 0 rgba(var(--ir),.035),0 12px 18px rgba(var(--ir),.1)}
-body.night .st-head h2{text-shadow:0 1px 0 rgba(255,255,255,.1),0 2px 0 rgba(255,255,255,.06),0 22px 30px rgba(0,0,0,.6)}
+body.night #v .st-head h2{text-shadow:0 1px 0 rgba(255,255,255,.1),0 2px 0 rgba(255,255,255,.06),0 22px 30px rgba(0,0,0,.6)}
 .st-head h2 em{letter-spacing:-.02em}
 .st-head p{color:var(--dim);margin:14px 0 0;max-width:52ch}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;padding:2px;margin:18px 0 0;background:rgba(var(--pr),.6)}
@@ -124,7 +124,7 @@ body.night .st-head h2{text-shadow:0 1px 0 rgba(255,255,255,.1),0 2px 0 rgba(255
 
 #v h2{font:500 clamp(1.5rem,2.6vw,2.1rem)/1.08 var(--sans);letter-spacing:-.035em;margin:26px 0 10px;color:var(--ink)}
 #v h3,.md h3{font:500 11.5px/1.5 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin:24px 0 10px}
-.md h3:first-child{font:500 1.5rem/1.1 var(--sans);letter-spacing:-.03em;text-transform:none;color:var(--ink);margin:0 0 14px}
+.md>h3:first-child{font:500 1.5rem/1.1 var(--sans);letter-spacing:-.03em;text-transform:none;color:var(--ink);margin:0 0 14px}
 .mu,.msg{color:var(--dim)}
 .card,.tile,.md,.tw{background:rgba(var(--pr),.84);background-image:none;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:0;box-shadow:var(--sh);color:var(--ink)}
 .card{padding:clamp(14px,1.6vw,22px);margin:14px 0}
@@ -144,7 +144,7 @@ button:disabled{opacity:.45;cursor:default}
 button .ico{vertical-align:-2px}
 select,input,textarea{font:inherit;color:var(--ink);background:rgba(var(--pr),.7);border:1px solid var(--line);border-radius:0;padding:8px 10px;box-shadow:none}
 select:focus,input:focus,textarea:focus{border-color:var(--ink);box-shadow:none;outline:0}
-input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--ink);padding:0}
+input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--ink);padding:0;border:0;background:transparent}
 input[type=color]{padding:2px;height:34px}
 label>span{color:var(--dim);font:500 10.5px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase}
 table{border-collapse:collapse}
@@ -160,6 +160,16 @@ body.brief-open .top{z-index:39}
 .md{padding:clamp(18px,2.4vw,30px);-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--paper)}
 .toast{background:var(--ink);color:var(--paper);border:0;border-radius:0;font:500 11px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:10px 16px;-webkit-backdrop-filter:none;backdrop-filter:none;z-index:70}
 .home-watermark{display:none}
+/* start menu, guide and intro: the same paper and ink */
+.start{background:rgba(var(--pr),.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--ink)}
+.start .sc{background:rgba(var(--pr),.9);border:1px solid var(--line);box-shadow:var(--sh);padding:clamp(26px,3.4vw,44px);max-width:min(520px,calc(100% - 28px))}
+.start .sc .sub,.intro .sub,.splash .sub{opacity:1;font:500 11.5px/1.5 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.start .sc .tag{color:var(--dim)}
+.intro:not(.reveal){background:var(--paper)}.intro{color:var(--ink)}
+.start .id-logo,.intro .id-logo,.start .logo-wrap svg,.intro .logo-wrap svg{filter:brightness(0)}
+body.night .start .id-logo,body.night .intro .id-logo,body.night .start .logo-wrap svg,body.night .intro .logo-wrap svg{filter:brightness(0) invert(.84)}
+.gb{background:var(--paper);border:1px solid var(--line);border-radius:0;box-shadow:var(--sh);color:var(--ink);padding:clamp(20px,2.6vw,34px)}
+.gs h2{font:500 clamp(1.6rem,2.6vw,2.2rem)/1.05 var(--sans);letter-spacing:-.035em}.gs li{color:var(--dim)}
 .orb,.coin{display:none}
 .prog{height:3px;border-radius:0;background:var(--line);margin:8px 0 12px}.prog i,.prog.bad i{background:var(--ink)}.prog.bad{background:repeating-linear-gradient(90deg,var(--line) 0 4px,transparent 4px 8px)}
 .cd{border-radius:0;background:rgba(var(--ir),.035);border:1px solid var(--line)}
@@ -239,7 +249,7 @@ body.mo-off #v .dl,body.perf #v .dl{animation:none}
   #nav .big.account-nav{top:8px;right:10px;translate:none}.top:has(.account-nav) .quick-actions{margin-right:36px}
   main{padding:118px 12px 60px}
   .ov{padding:116px 8px 30px}
-  .st-head{margin-bottom:16px}.st-head h2{font-size:1.85rem}
+  .st-head{margin-bottom:16px}#v .st-head h2{font-size:1.85rem}
   .pin b{font-size:9.5px;padding:5px 8px;bottom:40px}.pin s{height:40px}
   .card,.tile,.md{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
   .tiles{grid-template-columns:repeat(2,1fr)}

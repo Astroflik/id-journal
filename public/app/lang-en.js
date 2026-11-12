@@ -835,5 +835,18 @@ I18N.phrases({
 "ширина": "width",
 "экспорт данных для": "data export for",
 "эффект правил (": "effect of rules (",
+"Белая": "White",
+"Чёрная": "Black",
+"итого R": "total R",
+"ср. R": "avg R",
+", итог ": ", total ",
+"равно": "equals",
+" из ": " of ",
+"Журнал состоит из вкладок: Статистика, Журнал, Сетапы, План на день, А что если, Настройка аккаунта, Граф, Ачивки.": "The journal consists of tabs: Statistics, Journal, Setups, Day plan, What if, Account settings, Graph, Achievements.",
+"Переключайся кнопками в шапке или клавишами 1–8: камера перелетает к вкладке.": "Switch with the buttons in the header or the 1–8 keys: the camera flies to the tab.",
+"Всё сохраняется автоматически. Резервная копия и импорт — во вкладке «Настройка аккаунта».": "Everything is saved automatically. Backup and import are in the “Account settings” tab.",
+"Граф объёмный: крути его мышью или пальцем, колесо меняет масштаб. Клик по сделке открывает её карточку.": "The graph is three-dimensional: drag it with the mouse or a finger, the wheel zooms. A click on a trade opens its card.",
+"Кнопка 🎨 в шапке: белая или чёрная тема, шрифты (свои файлы и Google Fonts), свой фон и интро-видео.": "The 🎨 button in the header: white or black theme, fonts (your own files and Google Fonts), a custom background and an intro video.",
+"Разбор открывается переключателем «Статистика | Разбор» во вкладке «Статистика».": "The review opens with the “Statistics | Review” switch in the “Statistics” tab.",
 "яркий неон-фиолетовый стиль. Классика — тёмное стекло.": "a bright neon-violet style. Classic — dark glass."
 });

@@ -342,7 +342,7 @@ body.mo-off .so-drawer{animation:none}
 .quick-actions .float.chat{position:relative}.quick-actions .float.chat svg{width:20px;height:20px}.quick-actions .float.chat .dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--tx);box-shadow:0 0 0 2px var(--bg)}
 @media (max-width:560px){.so-socials{grid-template-columns:1fr}.so-drawer{top:auto;height:70vh;left:12px;right:12px;width:auto}}
 
-/* ==== 3D world (app/world.js): stations, camera flight, dockable tab bar ==== */
+/* ==== 3D world (old rules; the scene is app/terrain.js, the look is app/shell.css) ==== */
 body.paper{--wink:10,10,11}
 body.night{--wink:214,213,208}
 #sky{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}

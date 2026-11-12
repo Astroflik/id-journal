@@ -132,7 +132,7 @@
         var dash = function (u0, v0, u1, v1) { var len = hypot(u1 - u0, v1 - v0), m = Math.round(len / .3); for (var i = 0; i < m; i++) { var a0 = i / m, a1 = (i + .55) / m; seg(P(u0 + (u1 - u0) * a0, v0 + (v1 - v0) * a0), P(u0 + (u1 - u0) * a1, v0 + (v1 - v0) * a1), .014, 2, .3, .6); } };
         dash(-hw, hh, hw, hh); dash(hw, hh, hw, -hh); dash(hw, -hh, -hw, -hh); dash(-hw, -hh, -hw, hh);
         [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (c) { seg(P(c[0] * hw, c[1] * hh), P(c[0] * (hw - .5), c[1] * hh), .011, 2, .75, 1); seg(P(c[0] * hw, c[1] * hh), P(c[0] * hw, c[1] * (hh - .5)), .011, 2, .75, 1); });
-        for (t = 0; t < 1; t += .08) seg([s.top[0], s.top[1] + .04 + t * (1.5 - hh - .04) / .92 * .92, s.top[2]], [s.top[0], s.top[1] + .04 + (t + .04) * (1.5 - hh - .04) / .92 * .92, s.top[2]], .012, 2, .5, .9);
+        for (t = 0; t < 1; t += .08) seg([s.top[0], s.top[1] + .04 + t * 1.42, s.top[2]], [s.top[0], s.top[1] + .04 + (t + .04) * 1.42, s.top[2]], .012, 2, .5, .9);
         var ring = function (r, on, s0, s1) { var m = Math.round(2 * PI * r / .26); for (var i = 0; i < m; i++) { var a0 = i / m * 2 * PI, a1 = (i + on) / m * 2 * PI, st = max(3, Math.ceil((a1 - a0) * r / .013 * max(.5, den))); for (var q = 0; q <= st; q++) { var an = a0 + (a1 - a0) * q / st, x = s.top[0] + cos(an) * r, z = s.top[2] + sin(an) * r; add(x, Hg(x, z) + .03, z, 2, s0 + (s1 - s0) * rnd()); } } };
         ring(3.4, .55, .45, .85); ring(.55, 1, .7, 1);
         for (a = 0; a < 12; a++) { var an = a * PI / 6, c = cos(an), sn = sin(an), p0 = [s.top[0] + c * 3.55, 0, s.top[2] + sn * 3.55], p1 = [s.top[0] + c * 3.85, 0, s.top[2] + sn * 3.85]; p0[1] = Hg(p0[0], p0[2]) + .03; p1[1] = Hg(p1[0], p1[2]) + .03; seg(p0, p1, .013, 2, .5, .9); }
@@ -256,8 +256,9 @@
     });
     names();
   }
-  function names() { pins.forEach(function (p) { p.el.querySelector('em').textContent = p.num + ' / ' + label(p.k); p.el.querySelector('span').textContent = sub(p.k); p.el.setAttribute('aria-label', label(p.k)); }); hudLast = ''; }
+  function names() { pins.forEach(function (p) { p.el.querySelector('em').textContent = p.num + ' / ' + label(p.k); p.el.querySelector('span').textContent = sub(p.k); p.el.setAttribute('aria-label', label(p.k)); var b = p.el.querySelector('b'); p.w = b.offsetWidth || 190; p.h = b.offsetHeight || 44; }); hudLast = ''; }
   function drawPins(M, snap) {
+    var cr = !flight && content && content.getBoundingClientRect ? content.getBoundingClientRect() : null;
     pins.forEach(function (pin) {
       var p = ST[pin.k].top, o = 0, w = M[3] * p[0] + M[7] * p[1] + M[11] * p[2] + M[15], px = pin.x, py = pin.y;
       if (w > .3) {
@@ -266,6 +267,7 @@
         if (!pin.flip && px > cssW - 220) pin.flip = true; else if (pin.flip && px < cssW - 290) pin.flip = false;
         o = sm(1.6, 3.2, w) * (1 - sm(FOG0 + 6, FOG1 - 2, w)) * sm(6, 40, px) * sm(6, 40, cssW - px) * sm(96, 130, py) * sm(0, 30, cssH - py);
         if (pin.k === shown && !flight) o = 0;                     // the open tab covers its own hill
+        if (cr && o > 0) { var lx0 = pin.flip ? px - 8 - pin.w : px - 8, lx1 = pin.flip ? px + 8 : px + 8 + pin.w; if (lx1 > cr.left - 8 && lx0 < cr.right + 8 && py + 8 > cr.top - 8 && py - 62 - pin.h < cr.bottom + 8) o = 0; }
         pin.x = px; pin.y = py;
       }
       pin.o = snap ? o : pin.o + (o - pin.o) * .2;
@@ -364,7 +366,7 @@
       if (!ST[k] || !content) { swap && swap(); shown = k; resolve(); return; }
       if (flight) { var old = flight; flight = null; old.swap = null; old.resolve(); }
       var to = pose(k), from = { e: cam.e.slice(), tg: cam.tg.slice() }, dist = hypot(to.e[0] - from.e[0], to.e[1] - from.e[1], to.e[2] - from.e[2]), fromK = shown;
-      if (reduced() || dist < .01) {
+      if (reduced() || dist < .01 || !gl || !ready || q <= 0 || hidden) {       // no scene to fly over (no WebGL, performance mode, custom background, still building)
         // no flight: a short cross-fade only (opacity, never transform)
         rest(); swap && swap(); shown = k; cam = to; draw(true); emit(fromK, k, 1);
         if (content.animate) content.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' });
@@ -450,6 +452,7 @@
     if (glInit()) { size(); t0b = performance.now(); plan(); pump(finish); } else root.classList.add('noscene');
     var rt; W.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { size(); if (flight) origin(); draw(true); }, 120); });
     D.addEventListener('visibilitychange', function () { if (!D.hidden) { draw(true); scanStart(); } });
+    var st0 = 0; W.addEventListener('scroll', function () { if (st0 || flight) return; st0 = W.requestAnimationFrame(function () { st0 = 0; if (!flight) drawPins(matrix(cam, B), true); }); }, { passive: true });   // labels give way to the tab as it scrolls
     W.addEventListener('pointermove', function (ev) {
       if (ev.pointerType === 'touch' || still()) return;
       var x = ev.clientX / cssW * 2 - 1, y = 1 - ev.clientY / cssH * 2; mst = min(.45, mst + hypot(x - mpx, y - mpy) * 1.2); mpx = x; mpy = y; if (!raf) kick();

@@ -418,6 +418,15 @@ def main():
         tab.evaluate("window.scrollTo(0,0);go('stats')"); tab.wait_for_function("view==='stats'&&!World.flying()", timeout=6000)
         mono = tab.evaluate("""(()=>{const bad=[];const chk=(e,ps)=>{const c=getComputedStyle(e,ps);const m=[c.backgroundImage,c.boxShadow,c.backgroundColor,c.color,c.borderTopColor,c.fill,c.stroke].join(' ').match(/rgba?\\((\\d+), (\\d+), (\\d+)/g)||[];for(const x of m){const [r,g,b]=x.match(/\\d+/g).map(Number);if(Math.max(r,g,b)-Math.min(r,g,b)>28){bad.push(e.tagName+'.'+String(e.className.baseVal??e.className).slice(0,24)+(ps||'')+' '+x);break}}};document.querySelectorAll('#top *,#v *,#hud,#pins *').forEach(e=>{chk(e);chk(e,'::before');chk(e,'::after')});return [...new Set(bad)].slice(0,6)})()""")
         check('look: the stats tab is black and white (no purple, blue, green or red)', mono == [], mono)
+        # no WebGL: the journal works on a still background
+        nogl = tab.context.new_page(); nogl_err = []
+        nogl.on('pageerror', lambda e: nogl_err.append(str(e)))
+        nogl.add_init_script("const g=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t){return /webgl/.test(t)?null:g.apply(this,arguments)}")
+        nogl.goto(base); nogl.wait_for_function('ready===true&&accountApi.enabled', timeout=10000); nogl.wait_for_timeout(500)
+        nogl.evaluate("document.body.classList.remove('pre');document.querySelectorAll('.start,.intro').forEach(o=>o.remove());render();go('journal')"); nogl.wait_for_timeout(400)
+        st = nogl.evaluate("[document.documentElement.classList.contains('noscene'),World.info().gl,view,World.flying(),getComputedStyle(document.querySelector('#v')).transform,getComputedStyle(document.querySelector('#terrain')).display,document.querySelectorAll('#nav .big:not(.account-nav)').length,document.querySelectorAll('#v table tr').length>1||!!document.querySelector('#v .bar')]")
+        check('no WebGL: still background, tabs switch without a flight, nothing breaks', st == [True, False, 'journal', False, 'none', 'none', 8, True] and not nogl_err, [st, nogl_err])
+        nogl.close()
         # achievements (phase 6): one config, process-only conditions, page, showcase, unlock moment
         cfgok = tab.evaluate("(()=>{const L=ACH.list,ids=new Set(L.map(a=>a.id));return [L.length,ids.size===L.length,L.every(a=>/^[a-z0-9_]{2,32}$/.test(a.id)&&a.r>=1&&a.r<=5&&a.ru.length===2&&a.en.length===2&&a.goal>0&&typeof a.v==='function'),[1,2,3,4,5].every(r=>L.some(a=>a.r===r))]})()")
         check('achievements: 30-40 in one config, unique ids, all 5 rarities, RU and EN', 30 <= cfgok[0] <= 40 and cfgok[1:] == [True, True, True], cfgok)
